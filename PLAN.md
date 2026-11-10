@@ -32,6 +32,12 @@ Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9
 - [ ] Verify PostgreSQL 18 against Temporal's current server release, since the published tested matrix stops at PostgreSQL 16.
 - [ ] Validate controlled upgrade/migration separately if a PostgreSQL 16 Temporal volume exists.
 
+## Phase 2c — Consuming application integration PR #6
+- [x] Document host-to-Compose PostgreSQL and Temporal connection targets and provider-neutral integration boundaries.
+- [ ] Verify server-only read-only PostgreSQL and Temporal connectivity from the derived `nuxt-layers-test/infrastructure-test` app (separate PR).
+- [ ] Create scoped database diagnostic/runtime roles, migration roles and role-isolation acceptance.
+- [ ] Integrate using the published `temporal-gateway` contract when it exists; do not invent its API.
+
 ## Phase 3 — Temporal production
 - [ ] Pin current compatible Temporal server, UI and admin-tool image digests.
 - [ ] Replace auto-setup with temporalio/server and controlled SQL schema init/upgrade job.
