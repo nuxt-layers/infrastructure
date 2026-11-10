@@ -1,0 +1,80 @@
+name: nuxt-layers-infrastructure
+
+services:
+  postgres-app:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${APP_POSTGRES_USER:?Set APP_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD:?Set APP_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${APP_POSTGRES_DB:?Set APP_POSTGRES_DB}
+    volumes:
+      # PostgreSQL 18 uses a versioned cluster directory below this mount.
+      - app_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 15s
+    networks:
+      - infrastructure
+
+  postgres-temporal:
+    profiles: ["temporal"]
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TEMPORAL_POSTGRES_USER:?Set TEMPORAL_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD}
+    volumes:
+      - temporal_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 15s
+    networks:
+      - infrastructure
+
+  temporal:
+    profiles: ["temporal"]
+    image: temporalio/auto-setup:${TEMPORAL_DEV_VERSION:?Set TEMPORAL_DEV_VERSION}
+    restart: unless-stopped
+    depends_on:
+      postgres-temporal:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: ${TEMPORAL_POSTGRES_USER:?Set TEMPORAL_POSTGRES_USER}
+      POSTGRES_PWD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postgres-temporal
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CLI_ADDRESS: temporal:7233
+    volumes:
+      - ../temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+    networks:
+      - infrastructure
+
+  temporal-ui:
+    profiles: ["temporal"]
+    image: temporalio/ui:${TEMPORAL_UI_VERSION:?Set TEMPORAL_UI_VERSION}
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+    networks:
+      - infrastructure
+
+networks:
+  infrastructure:
+    internal: false
+
+volumes:
+  app_pgdata:
+  temporal_pgdata:
