@@ -27,7 +27,7 @@ $workflowId = 'infra-acceptance-' + [guid]::NewGuid().ToString('N')
 $harness = Join-Path $root 'tests/temporal'
 Push-Location $harness
 try {
-    & corepack pnpm install --no-frozen-lockfile
+    & corepack pnpm install --frozen-lockfile
     Assert-DockerExit
     & corepack pnpm exec tsx src/acceptance.ts execute $workflowId
     Assert-DockerExit
