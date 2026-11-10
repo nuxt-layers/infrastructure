@@ -12,6 +12,8 @@ services:
       - shared_preload_libraries=age,pg_textsearch,pg_cron
       - -c
       - cron.database_name=postgres
+      - -c
+      - cron.use_background_workers=on
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${APP_POSTGRES_USER:?Set APP_POSTGRES_USER}

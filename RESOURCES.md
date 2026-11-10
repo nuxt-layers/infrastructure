@@ -17,3 +17,10 @@
 - [pgmq 1.13.0](https://github.com/pgmq/pgmq/releases/tag/v1.13.0).
 - [pg_cron PostgreSQL 18 Debian installation](https://github.com/citusdata/pg_cron#installing-pg_cron).
 - [PostgreSQL 18 Debian packages](https://www.postgresql.org/download/linux/debian/).
+
+## Functional API documentation (consulted for PR #3)
+
+- [Apache AGE Cypher creation/traversal](https://age.apache.org/getstarted/quickstart/).
+- [pg_textsearch BM25 querying](https://github.com/timescale/pg_textsearch/blob/main/README.md).
+- [pgmq SQL API](https://pgmq.github.io/pgmq/api/sql/functions/).
+- [pg_cron jobs, execution history and background workers](https://github.com/citusdata/pg_cron).
