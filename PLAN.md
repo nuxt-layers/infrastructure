@@ -14,10 +14,15 @@ Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9
 - [x] Define a custom PostgreSQL 18 image using tagged upstream source inputs; build acceptance, source commit and image digest verification pending.
 - [x] Configure AGE, pg_textsearch, pgmq and pg_cron installation/preloading; pending actual build and ABI/behaviour verification.
 - [x] Add version manifest, bootstrap SQL and explicit existing-volume enablement path; CI build, upgrades/downgrades and production pinning outstanding.
-- [ ] Add application cache schema with TTL expiry and tenant-aware keys; reserve UNLOGGED tables for regenerable content.
-- [ ] Add durable outbox-to-pgmq acceptance, retry/idempotency and LISTEN/NOTIFY wakeup tests.
-- [ ] Verify graph tenant bounds and search tenant filters.
-- [ ] Test extension-upgrade recovery with persistent volume.
+- [ ] Add application cache schema with TTL expiry and tenant-aware keys; reserve UNLOGGED tables for regenerable content. (PR #3 tests only temporary cache classification and clean restart.)
+- [ ] Add durable outbox-to-pgmq acceptance, retry/idempotency and LISTEN/NOTIFY wakeup tests. (PR #3 adds base pgmq visibility and archive checks only.)
+- [ ] Verify graph tenant bounds and enforced search tenant filters. (PR #3 adds graph traversal and explicit predicate smoke tests, not security enforcement.)
+- [ ] Test extension-upgrade recovery with persistent volume. (PR #3 adds clean restart checks only.)
+
+## Phase 2a — Functional acceptance PR #3
+- [x] Author AGE graph, BM25, pgmq delivery/visibility/archive, pg_cron execution and clean restart assertions.
+- [ ] Run the functional suite on Windows Docker Desktop and address failures before merge.
+- [ ] Add independent destructive crash/recovery and real tenant isolation tests in future isolated fixtures.
 
 ## Phase 3 — Temporal production
 - [ ] Pin current compatible Temporal server, UI and admin-tool image digests.
