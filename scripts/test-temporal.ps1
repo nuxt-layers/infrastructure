@@ -15,9 +15,14 @@ Assert-DockerExit
 if (-not (($version | Out-String).Trim() -match '^18\d{4}$')) {
     throw "Temporal PostgreSQL is not version 18: $version"
 }
-# Wait for Temporal frontend before invoking the SDK (no workflow tests performed by assistant).
-& docker compose @compose exec -T temporal sh -c 'tctl --address temporal:7233 namespace describe default'
-Assert-DockerExit
+# The first start may initialise the Temporal schema, so wait for the frontend.
+$ready = $false
+for ($attempt = 0; $attempt -lt 60; $attempt++) {
+    & docker compose @compose exec -T temporal sh -c 'tctl --address temporal:7233 namespace describe default' *> $null
+    if ($LASTEXITCODE -eq 0) { $ready = $true; break }
+    Start-Sleep -Seconds 2
+}
+if (-not $ready) { throw 'Temporal default namespace did not become ready.' }
 $workflowId = 'infra-acceptance-' + [guid]::NewGuid().ToString('N')
 $harness = Join-Path $root 'tests/temporal'
 Push-Location $harness
