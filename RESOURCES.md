@@ -9,3 +9,11 @@
 - [Archived Temporal Compose reference](https://github.com/temporalio/docker-compose/blob/main/docker-compose-postgres.yml) — archived 2026-01-05; not production guidance.
 
 **Verification status:** Image tags in the local example are provisional development references, not a claim that they are the latest or production-certified.
+
+## Extension build references (checked 2026-11-10)
+
+- [Apache AGE PG18 1.8.0 release](https://github.com/apache/age/releases/tag/PG18%2Fv1.8.0-rc0).
+- [pg_textsearch 1.5.1](https://github.com/timescale/pg_textsearch/releases/tag/v1.5.1).
+- [pgmq 1.13.0](https://github.com/pgmq/pgmq/releases/tag/v1.13.0).
+- [pg_cron PostgreSQL 18 Debian installation](https://github.com/citusdata/pg_cron#installing-pg_cron).
+- [PostgreSQL 18 Debian packages](https://www.postgresql.org/download/linux/debian/).

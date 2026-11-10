@@ -6,7 +6,7 @@ Governed by `nuxt-layers/architecture-rules` (reviewed master: `3436b1cc2a33401a
 
 ## Current implementation status
 
-**Phase 1 — local baseline only.** This branch provides a PostgreSQL 18 application server, an independently persisted PostgreSQL 16 Temporal database, a local Temporal development server and Web UI, plus PowerShell commands. **The application PostgreSQL image does not yet contain AGE, pg_textsearch, pgmq or pg_cron.** Do not use this development stack in production. Follow `PLAN.md` for extension builds, production-ready Temporal schema management, security and backup acceptance.
+**Phase 2 — extension image candidate (local development only).** This branch provides a PostgreSQL 18 application server, an independently persisted PostgreSQL 16 Temporal database, a local Temporal development server and Web UI, plus PowerShell commands. **The application PostgreSQL image is now defined to build AGE, pg_textsearch and pgmq from versioned source tags and install pg_cron from apt; successful compilation and runtime behaviour are not yet verified.** Do not use this development stack in production. Follow `PLAN.md` for extension builds, production-ready Temporal schema management, security and backup acceptance.
 
 ## Windows 11 quick start
 
@@ -17,6 +17,8 @@ Copy-Item .env.example .env
 .\scripts\start.ps1
 .\scripts\verify.ps1
 ```
+
+After cloning the PR, build and enable extensions with `docker compose --env-file .env -f compose/compose.yaml -f compose/compose.dev.yaml build postgres-app`, then `.\\scripts\\install-extensions.ps1` and `.\\scripts\\verify-extensions.ps1`. Full instructions: [PostgreSQL extensions](docs/POSTGRES-EXTENSIONS.md).
 
 Application PostgreSQL: `127.0.0.1:5432` (database `nuxt_layers`). Temporal services are optional:
 

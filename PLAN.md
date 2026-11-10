@@ -11,9 +11,9 @@ Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9
 - [ ] Pin deployed images by immutable digest after acceptance.
 
 ## Phase 2 — PostgreSQL extension image
-- [ ] Build custom PostgreSQL 18 image from reproducible, verified source/binary versions.
-- [ ] Install Apache AGE, pg_textsearch (evaluate ParadeDB as alternative), pgmq and pg_cron; validate ABI/version compatibility and preload requirements.
-- [ ] Add version manifest, build workflow, extension create/migration/upgrade and downgrade policy.
+- [x] Define a custom PostgreSQL 18 image using tagged upstream source inputs; build acceptance, source commit and image digest verification pending.
+- [x] Configure AGE, pg_textsearch, pgmq and pg_cron installation/preloading; pending actual build and ABI/behaviour verification.
+- [x] Add version manifest, bootstrap SQL and explicit existing-volume enablement path; CI build, upgrades/downgrades and production pinning outstanding.
 - [ ] Add application cache schema with TTL expiry and tenant-aware keys; reserve UNLOGGED tables for regenerable content.
 - [ ] Add durable outbox-to-pgmq acceptance, retry/idempotency and LISTEN/NOTIFY wakeup tests.
 - [ ] Verify graph tenant bounds and search tenant filters.
