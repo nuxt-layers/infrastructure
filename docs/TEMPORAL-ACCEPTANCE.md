@@ -24,7 +24,7 @@ git pull --ff-only
 
 `test-temporal.ps1` brings up the Temporal profile, asserts the Temporal PostgreSQL major version, checks the default namespace, installs the isolated TypeScript SDK acceptance harness, runs an actual workflow with a worker, restarts the Temporal server and verifies the completed workflow result is still retrievable from persistence.
 
-The acceptance harness deliberately uses exact SDK version numbers but does not yet commit a frozen pnpm lockfile. CI/local machine must resolve and lock dependencies before production acceptance. The harness runs locally and connects to `127.0.0.1:7233` rather than deploying its own worker service. It creates an individually named workflow and does not delete other data.
+The acceptance harness deliberately uses exact SDK version numbers and provides an explicit `pnpm-workspace.yaml` build allowlist for `@swc/core`, `esbuild` and `protobufjs`. pnpm 12 rejects these otherwise with `ERR_PNPM_IGNORED_BUILDS`. Do not disable `strictDepBuilds` or approve all dependency scripts. The harness does not yet commit a frozen pnpm lockfile; CI/local installation must first produce and review one. CI/local machine must resolve and lock dependencies before production acceptance. The harness runs locally and connects to `127.0.0.1:7233` rather than deploying its own worker service. It creates an individually named workflow and does not delete other data.
 
 Successful completed-workflow retrieval after a clean Temporal restart is **not** proof of in-flight workflow recovery, worker crash recovery, nontrivial activity retries, backup/restore or HA. Those need later tests.
 
