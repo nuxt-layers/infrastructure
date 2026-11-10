@@ -24,3 +24,8 @@
 - [pg_textsearch BM25 querying](https://github.com/timescale/pg_textsearch/blob/main/README.md).
 - [pgmq SQL API](https://pgmq.github.io/pgmq/api/sql/functions/).
 - [pg_cron jobs, execution history and background workers](https://github.com/citusdata/pg_cron).
+
+## Apache AGE preload compatibility
+
+- [Apache AGE issue #2180](https://github.com/apache/age/issues/2180) — errors when AGE globally preloaded in a database without `ag_catalog`.
+- [Apache AGE utility-command fix discussion #2578](https://github.com/apache/age/pull/2578) — TRUNCATE and other utility commands can access missing AGE catalogues.
