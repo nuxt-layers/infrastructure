@@ -46,7 +46,7 @@ Temporal gRPC: `127.0.0.1:7233`; Temporal Web UI: <http://127.0.0.1:8080>. Postg
 - Do not route infrastructure backups to the Hetzner application object-storage bucket; that bucket is reserved for application files and images.
 - Production access to PostgreSQL and Temporal must be private, with credential isolation, TLS across trust boundaries, tested backups and explicit deployment approval.
 
-See `PLAN.md` and `RESOURCES.md`. No CI/runtime acceptance has been claimed for this initial commit.
+See [local consuming-application connections](docs/APPLICATION-INTEGRATION.md), `PLAN.md` and `RESOURCES.md`. No CI/runtime acceptance has been claimed for this initial commit.
 
 ### Temporal local acceptance
 
