@@ -1,0 +1,19 @@
+{
+  "name": "@nuxt-layers/temporal-infrastructure-acceptance",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "execute": "tsx src/acceptance.ts execute",
+    "verify": "tsx src/acceptance.ts verify"
+  },
+  "dependencies": {
+    "@temporalio/client": "1.24.0",
+    "@temporalio/worker": "1.24.0",
+    "@temporalio/workflow": "1.24.0"
+  },
+  "devDependencies": {
+    "tsx": "4.20.6",
+    "typescript": "6.0.3"
+  }
+}

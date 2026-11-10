@@ -29,3 +29,10 @@
 
 - [Apache AGE issue #2180](https://github.com/apache/age/issues/2180) — errors when AGE globally preloaded in a database without `ag_catalog`.
 - [Apache AGE utility-command fix discussion #2578](https://github.com/apache/age/pull/2578) — TRUNCATE and other utility commands can access missing AGE catalogues.
+
+## Temporal PostgreSQL 18 evaluation (2026-11-10)
+
+- [Temporal persistence compatibility matrix](https://docs.temporal.io/temporal-service/persistence) — PostgreSQL 16.6 is in the published tested matrix; PostgreSQL 18 is **not** listed, and therefore requires local acceptance before production approval.
+- [Temporal TypeScript SDK worker example](https://github.com/temporalio/samples-typescript/blob/main/hello-world/src/worker.ts).
+- [Temporal TypeScript SDK worker reference](https://typescript.temporal.io/api/namespaces/worker).
+- [PostgreSQL 18 Docker layout](https://hub.docker.com/_/postgres) — `/var/lib/postgresql`, not `/var/lib/postgresql/data`.

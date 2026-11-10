@@ -3,7 +3,7 @@
 Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9ee9fe11ea93d2` reviewed 2026-11-10. This repository is infrastructure, not a Nuxt capability.
 
 ## Phase 1 — local baseline (this PR)
-- [x] Separate PostgreSQL 18 application store and PostgreSQL 16 Temporal persistence.
+- [x] Separate PostgreSQL 18 application store and PostgreSQL 18 Temporal persistence (compatibility candidate; local acceptance pending).
 - [x] Docker Compose with optional local Temporal and loopback-only ports.
 - [x] Windows PowerShell start, stop, verify and guarded reset commands.
 - [ ] Execute Docker Compose config, startup and SQL probes on Windows Docker Desktop.
@@ -23,6 +23,14 @@ Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9
 - [x] Author AGE graph, BM25, pgmq delivery/visibility/archive, pg_cron execution and clean restart assertions.
 - [ ] Run the functional suite on Windows Docker Desktop and address failures before merge.
 - [ ] Add independent destructive crash/recovery and real tenant isolation tests in future isolated fixtures.
+
+## Phase 2b — Temporal local acceptance PR #5
+- [x] Define PostgreSQL 18 Temporal container using the PG18 data-directory layout.
+- [x] Author a TypeScript SDK workflow/worker local acceptance harness and restart/history verification script.
+- [ ] Execute Temporal startup, workflow and persistence checks on Windows Docker Desktop or CI.
+- [x] Commit the local Temporal acceptance lockfile and use `--frozen-lockfile` during installation. Local/CI validation of the final change remains pending.
+- [ ] Verify PostgreSQL 18 against Temporal's current server release, since the published tested matrix stops at PostgreSQL 16.
+- [ ] Validate controlled upgrade/migration separately if a PostgreSQL 16 Temporal volume exists.
 
 ## Phase 3 — Temporal production
 - [ ] Pin current compatible Temporal server, UI and admin-tool image digests.

@@ -6,7 +6,7 @@ Governed by `nuxt-layers/architecture-rules` (reviewed master: `3436b1cc2a33401a
 
 ## Current implementation status
 
-**Phase 2 — extension image candidate (local development only).** This branch provides a PostgreSQL 18 application server, an independently persisted PostgreSQL 16 Temporal database, a local Temporal development server and Web UI, plus PowerShell commands. **The application PostgreSQL image is now defined to build AGE, pg_textsearch and pgmq from versioned source tags and install pg_cron from apt; compilation and installation passed initial Windows testing; functional acceptance is pending.** Do not use this development stack in production. Follow `PLAN.md` for extension builds, production-ready Temporal schema management, security and backup acceptance.
+**Phase 2 — extension image candidate (local development only).** This branch provides a PostgreSQL 18 application server, an independently persisted PostgreSQL 18 Temporal compatibility-candidate database, a local Temporal development server and Web UI, plus PowerShell commands. **The application PostgreSQL image is now defined to build AGE, pg_textsearch and pgmq from versioned source tags and install pg_cron from apt; compilation and installation passed initial Windows testing; functional acceptance is pending.** Do not use this development stack in production. Follow `PLAN.md` for extension builds, production-ready Temporal schema management, security and backup acceptance.
 
 ## Windows 11 quick start
 
@@ -20,7 +20,7 @@ Copy-Item .env.example .env
 
 After cloning the PR, build and enable extensions with `docker compose --env-file .env -f compose/compose.yaml -f compose/compose.dev.yaml build postgres-app`, then `.\\scripts\\install-extensions.ps1` and `.\\scripts\\verify-extensions.ps1`. Full instructions: [PostgreSQL extensions](docs/POSTGRES-EXTENSIONS.md). Run the [functional acceptance suite](docs/POSTGRES-ACCEPTANCE.md) with `.\scripts\test-postgres.ps1` on an isolated local development stack.
 
-Application PostgreSQL: `127.0.0.1:5432` (database `nuxt_layers`). Temporal services are optional:
+Application PostgreSQL: `127.0.0.1:5432` (database `nuxt_layers`). Temporal services are optional; PostgreSQL 18 for Temporal remains a local compatibility candidate pending tests and is not yet upstream-certified:\n
 
 ```powershell
 .\scripts\start.ps1 -Temporal
@@ -47,3 +47,7 @@ Temporal gRPC: `127.0.0.1:7233`; Temporal Web UI: <http://127.0.0.1:8080>. Postg
 - Production access to PostgreSQL and Temporal must be private, with credential isolation, TLS across trust boundaries, tested backups and explicit deployment approval.
 
 See `PLAN.md` and `RESOURCES.md`. No CI/runtime acceptance has been claimed for this initial commit.
+
+### Temporal local acceptance
+
+See [Temporal acceptance](docs/TEMPORAL-ACCEPTANCE.md) for the startup, workflow execution and persistence checks. Do not reuse a populated PostgreSQL 16 Temporal volume with PostgreSQL 18.

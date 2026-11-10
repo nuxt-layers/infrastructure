@@ -5,3 +5,7 @@
 .DS_Store
 .idea/
 .vscode/
+
+# Local Temporal acceptance harness
+node_modules/
+tests/temporal/node_modules/
