@@ -9,7 +9,7 @@ Run only against the **disposable, local development stack**. The suite creates 
 .\scripts\test-postgres.ps1
 ```
 
-The script requires a functioning Docker Desktop, a local `.env`, and the already-built PostgreSQL extension image.
+The script requires a functioning Docker Desktop, a local `.env`, and the already-built PostgreSQL extension image. After modifying Compose settings, `start.ps1` must recreate the PostgreSQL container to apply them; no database volume reset is necessary. The first pg_cron test on the previously preloaded AGE configuration failed because AGE hooks accessed `ag_catalog` in the `postgres` database. The fixed configuration loads AGE only for graph sessions.
 
 Checks:
 
