@@ -10,6 +10,7 @@ SELECT CASE
    AND (SELECT count(*) FROM pg_extension WHERE extname IN ('age', 'pg_textsearch', 'pgmq')) = 3
    AND position('pg_textsearch' in current_setting('shared_preload_libraries')) > 0
    AND position('pg_cron' in current_setting('shared_preload_libraries')) > 0
+   AND NOT ('age' = ANY (regexp_split_to_array(current_setting('shared_preload_libraries'), '\s*,\s*')))
   THEN 'PASS'
   ELSE 'FAIL'
 END;
