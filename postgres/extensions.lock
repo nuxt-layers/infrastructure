@@ -1,0 +1,12 @@
+# PostgreSQL extension inputs — source tags selected 2026-11-10.
+# All source refs should additionally be resolved to immutable commit SHAs / artefact checksums
+# and images published by digest before deployment to production.
+postgres_base=postgres:18-bookworm
+apache_age_repository=https://github.com/apache/age
+apache_age_ref=PG18/v1.8.0-rc0
+pg_textsearch_repository=https://github.com/timescale/pg_textsearch
+pg_textsearch_ref=v1.5.1
+pgmq_repository=https://github.com/pgmq/pgmq
+pgmq_ref=v1.13.0
+pg_cron_apt_package=postgresql-18-cron
+pg_cron_target_version=1.6.8

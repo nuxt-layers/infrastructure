@@ -2,7 +2,16 @@ name: nuxt-layers-infrastructure
 
 services:
   postgres-app:
-    image: postgres:18
+    build:
+      context: ../postgres
+      dockerfile: Dockerfile
+    image: nuxt-layers/postgres-extended:pg18-dev
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=age,pg_textsearch,pg_cron
+      - -c
+      - cron.database_name=postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${APP_POSTGRES_USER:?Set APP_POSTGRES_USER}
