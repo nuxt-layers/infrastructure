@@ -13,6 +13,9 @@ INSERT INTO infra_acceptance.documents VALUES
 CREATE INDEX infra_accept_bm25_idx
  ON infra_acceptance.documents USING bm25(content)
  WITH (text_config='english');
+-- Explicit index lookup in pg_textsearch follows PostgreSQL schema visibility.
+-- The BM25 index was created in infra_acceptance, not the default public schema.
+SET search_path = infra_acceptance, public;
 DO $$
 DECLARE winning integer;
 DECLARE n integer;
@@ -30,4 +33,5 @@ BEGIN
    RAISE EXCEPTION 'Tenant predicate failed: %', n;
  END IF;
 END $$;
+RESET search_path;
 \echo 'PASS: BM25 ranking and example tenant predicate'

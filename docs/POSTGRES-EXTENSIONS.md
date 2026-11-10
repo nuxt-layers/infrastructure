@@ -15,7 +15,7 @@ docker compose --env-file .env -f compose/compose.yaml -f compose/compose.dev.ya
 
 Building the image alone **does not migrate databases**. The entrypoint script enables extensions only for fresh database volumes; `install-extensions.ps1` is the explicit reconciliation path for existing volumes. Never delete an existing volume as an installation step. Before upgrading extensions on important data, take and restore-test a backup. `CREATE EXTENSION IF NOT EXISTS` does not upgrade an already-installed extension.
 
-AGE functions often require `LOAD 'age'` and an explicit `ag_catalog` search path on each applicable session. The host-supplied connection adapter is responsible for this; do not globally put `ag_catalog` ahead of all other schemas without reviewing isolation and permissions.
+AGE must **not** be in the global `shared_preload_libraries` for this mixed-database instance. Its installed version can access `ag_catalog` while handling PostgreSQL utility statements even in databases without AGE; this affected the `postgres` maintenance database when running `TRUNCATE`. Instead, graph sessions use `LOAD 'age'` followed by an explicit `ag_catalog` search path. AGE is installed only in databases that require graphs; `postgres` remains reserved for pg_cron. AGE functions often require `LOAD 'age'` and an explicit `ag_catalog` search path on each applicable session. The host-supplied connection adapter is responsible for this; do not globally put `ag_catalog` ahead of all other schemas without reviewing isolation and permissions.
 
 `pg_cron` is installed in the `postgres` maintenance database only, with the worker configured by `shared_preload_libraries`. Database maintenance jobs are distinct from application Scheduler and Temporal workflows.
 
