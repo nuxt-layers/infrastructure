@@ -28,7 +28,7 @@ Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9
 - [x] Define PostgreSQL 18 Temporal container using the PG18 data-directory layout.
 - [x] Author a TypeScript SDK workflow/worker local acceptance harness and restart/history verification script.
 - [ ] Execute Temporal startup, workflow and persistence checks on Windows Docker Desktop or CI.
-- [ ] Generate and commit a frozen pnpm lockfile for the acceptance harness.
+- [x] Commit the local Temporal acceptance lockfile and use `--frozen-lockfile` during installation. Local/CI validation of the final change remains pending.
 - [ ] Verify PostgreSQL 18 against Temporal's current server release, since the published tested matrix stops at PostgreSQL 16.
 - [ ] Validate controlled upgrade/migration separately if a PostgreSQL 16 Temporal volume exists.
 
