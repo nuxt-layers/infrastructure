@@ -1,0 +1,8 @@
+# Explicit build-script approvals for the isolated Temporal acceptance harness.
+# Unlisted dependencies are not approved to execute install scripts.
+packages:
+  - '.'
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  protobufjs: true
