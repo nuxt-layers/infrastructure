@@ -33,13 +33,15 @@ services:
 
   postgres-temporal:
     profiles: ["temporal"]
-    image: postgres:16
+    # Local PG18 compatibility candidate; Temporal's published tested matrix still stops at PG16.
+    image: postgres:18
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${TEMPORAL_POSTGRES_USER:?Set TEMPORAL_POSTGRES_USER}
       POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD}
     volumes:
-      - temporal_pgdata:/var/lib/postgresql/data
+      # PG18 cluster layout; never mount existing PG16 data without a major upgrade.
+      - temporal_pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
