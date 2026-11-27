@@ -1,6 +1,6 @@
 # PostgreSQL Phase 2 — foundation and acceptance
 
-Architecture master reviewed `e9dac240c16891fcbed9669228dac6cd5cde9c3c`. A02/A06 and INF-R10–R26/R123–R131 apply. This change authors an isolated test harness and scoped owner provisioning; no execution evidence yet.
+Architecture master reviewed `e9dac240c16891fcbed9669228dac6cd5cde9c3c`. A02/A06 and INF-R10–R26/R123–R131 apply. The isolated eight-stage harness passed locally on 1396af5; see final evidence below.
 
 ## Run locally (PowerShell 7 / Docker Desktop)
 ```powershell
@@ -13,14 +13,14 @@ Execute postgres/provision/owner.sql as operator with psql -v owner_schema=<sche
 
 ## Acceptance state
 - Authored: pg_trgm, optional vector, pinned pg_textsearch/PGMQ/vector, owner provisioning and real TCP login fixtures, cross-schema/RLS and native search, deny-by-default graph/queue access, committed outbox rollback/retry/deduplication, cross-session LISTEN/NOTIFY and isolated SIGKILL recovery.
-- Not proven: all runtime results; positive scoped graph/BM25/vector/PGMQ adapters and cross-tenant tests, pool exhaustion, migration/upgrade/restore, consuming Nuxt test host. Backup/PITR integration Phase 5. The deny-by-default graph/queue tests do not prove tenant-safe graph or queue access; owner-specific adapter grants and positive/negative acceptance remain mandatory.
-- Exact image/apt pinning outstanding; AGE source commit verified; no production readiness.
+- Not proven: production adapter isolation and inference resistance, client pool exhaustion, migration/upgrade/restore, consuming Nuxt test host. Backup/PITR integration Phase 5. The deny-by-default graph/queue tests do not prove tenant-safe graph or queue access; owner-specific adapter grants and positive/negative acceptance remain mandatory.
+- Direct base/source/cron pins verified locally; complete apt provenance and production readiness outstanding.
 
 The harness uses synthetic passwords only, authenticates via TCP and disposes of its dedicated project and volumes. SIGKILL is deliberately restricted to that project. The source/consumer receipt tables are fixtures, not shared platform schemas. Notification is a wake-up signal, not durable delivery.
 
 ## Scoped extension candidates and pressure
 
-Fixtures 19–24 exercise real runtime login, RLS-filtered BM25/vector results and fixed-scope graph/queue functions under dedicated NOLOGIN owners. They are deliberately fail-closed candidates, not production adapters. Graph execution may require further AGE privilege/load compatibility work; PGMQ signatures and nested helper grants have been reconciled with pinned source; table privileges and actual behaviour still require execution. No arbitrary Cypher or queue name is passed to a privileged function. BM25 corpus statistics, approximate vector recall and timing may leak information even when returned rows are scoped: separate tenant indexes/databases where confidentiality requires, and assess inference separately. A PostgreSQL role connection limit fixture proves refusal and recovery, not a consuming host's client-pool timeout/queue behaviour. All results pending execution.
+Fixtures 19–24 exercise real runtime login, RLS-filtered BM25/vector results and fixed-scope graph/queue functions under dedicated NOLOGIN owners. They are deliberately fail-closed candidates, not production adapters. Graph execution may require further AGE privilege/load compatibility work; PGMQ signatures and nested helper grants have been reconciled with pinned source; table privileges and actual behaviour still require execution. No arbitrary Cypher or queue name is passed to a privileged function. BM25 corpus statistics, approximate vector recall and timing may leak information even when returned rows are scoped: separate tenant indexes/databases where confidentiality requires, and assess inference separately. A PostgreSQL role connection limit fixture proves refusal and recovery, not a consuming host's client-pool timeout/queue behaviour. These fixture results passed in the combined local run; production adapter assurance remains separate.
 
 ## Reproducibility and host integration
 
@@ -47,3 +47,11 @@ Owner-provided output for af353fb: all preceding fixtures passed again. Restrict
 Owner supplied terminal evidence: Graph PASS (including direct cross-graph denial); Notifications PASS (listener receipt assertion); Pressure PASS (role connection limit refusal and successful reconnection); Recovery PASS (committed outbox rollback/retry, consumer deduplication, archive, SIGKILL restart, durable record retained and UNLOGGED cache reset). All four uniquely named projects cleaned up successfully. Relational, Search and Transport passed in earlier complete-prefix runs; seven stages have positive evidence across runs, not one combined final revision run.
 
 Runtime package query returned PostgreSQL 18.7-1.pgdg12+5 and postgresql-18-cron 1.6.8-2.pgdg12+1. The latter is now pinned in image and Compose defaults; verify the new build. Observed PostgreSQL package version is evidence, not a complete apt snapshot. Recovery image manifest list sha256:bdd47fcfd8be3212bf8283491112e6c8a68f71904da0b8dcf79c4bab859ed2fa. Other stage manifest lists differ; no bitwise reproducibility claim. Functional cron and clean restart, final combined harness, client pool host, inference and upgrade gates remain outstanding.
+
+## Combined local acceptance — 1396af5 (27 November 2026)
+
+Owner executed Maintenance and All against exact cron package pin. Both passed. All eight stages passed in a single disposable project, including actual cron scheduling/execution/history/cleanup, clean restart, restricted logins, relational/RLS isolation, BM25/vector row isolation, scoped PGMQ and AGE, notification receipt, role pressure/recovery, committed outbox/redelivery/deduplication, SIGKILL recovery and UNLOGGED reset. Cleanup succeeded. Runtime packages: PostgreSQL 18.7-1.pgdg12+5; cron 1.6.8-2.pgdg12+1. Combined image manifest list sha256:c497b321fa65e47de3a42fd6079d50c0da689e48cbeef4b4e84a1be38f7edc60. This is the accepted local harness baseline, not complete production acceptance. Host diagnostics, inference, full build provenance and upgrades remain separate.
+
+## Consuming application fixture
+
+Run `./scripts/start-postgres-host-fixture.ps1` in this repository. It starts a uniquely named disposable PostgreSQL project, publishes a randomly allocated loopback port, provisions a restricted synthetic diagnostic login, and prints PowerShell environment assignments for the test application terminal. Keep the fixture terminal open; press Enter to remove only that project's container and volume. Never use production or existing development data. The separate host must run on loopback. Clear the temporary environment variables when finished.
