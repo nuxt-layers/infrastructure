@@ -14,7 +14,7 @@ services:
       retries: 30
     networks: [persistence]
   temporal:
-    image: ${TEMPORAL_FIXTURE_IMAGE:-temporalio/auto-setup:1.27.2}
+    image: temporalio/auto-setup:1.27.2@sha256:b44cbfeb43dbeae42db113b44fb8414c3452f05643b3d6b1592f955277d73526
     depends_on:
       postgres-temporal:
         condition: service_healthy

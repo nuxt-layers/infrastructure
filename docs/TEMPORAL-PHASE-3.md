@@ -14,7 +14,7 @@ PowerShell 7, Docker Desktop, existing Node/pnpm toolchain:
 .\scripts\test-temporal-phase3.ps1 -Stage Execution
 .\scripts\test-temporal-phase3.ps1 -Stage Recovery
 ```
-Default All executes startup, real worker workflow and completed-history retrieval after clean server and database restart. Each invocation uses an independent project and disposable volume, no existing .env or application database, dynamically allocated loopback frontend port, private persistence network and synthetic credentials. No UI is required for acceptance. Capture schema versions and observed image digests; exact server/UI pins require verified evidence. No assistant execution.
+Default All executes startup, real worker workflow and completed-history retrieval after clean server and database restart. Each invocation uses an independent project and disposable volume, no existing .env or application database, dynamically allocated loopback frontend port, private persistence network and synthetic credentials. No UI is required for acceptance. Capture schema versions and observed image digests. Server image pinned from owner evidence; UI is not part of this fixture. No assistant execution.
 
 ## Remaining packages
 
@@ -23,3 +23,9 @@ Default All executes startup, real worker workflow and completed-history retriev
 - Exercise scheduled dispatch, activity retry/heartbeat, worker drain, in-flight server/database interruption and durable history, SQL visibility and namespace separation.
 - Scope namespace/queue operations with real authorisation and TLS; namespace and task queue identifiers alone confer no permissions. Direct SDK fixture is trusted local only.
 - Verify published gateway contract independently; no business ownership or direct Temporal SQL access by capabilities. Backup/PITR belongs to Phase 5. No paid activation.
+
+## Owner startup evidence — 27 November 2026
+
+Startup passed at 282a40a: PostgreSQL 18, Temporal auto-setup 1.27.2, execution schema 1.16 (minimum 1.0), visibility schema 1.9 (minimum 0.1), both healthy, complete cleanup. Observed repository digest b44cbfeb43dbeae42db113b44fb8414c3452f05643b3d6b1592f955277d73526 now pins the fixture. This is local platform evidence, not general architecture support or upstream certification.
+
+Execution now exercises a real activity with one intentional transient failure and exactly two attempts, then drains the worker. Recovery additionally suspends a distinct workflow after the completed activity, restarts both services, resumes via signal with a fresh worker and asserts no repeated completed activity. This is clean restart/replay evidence only; heartbeat timeout, abrupt crash, scheduling, visibility query, authorisation and migrations remain separate. Existing legacy SDK fixture unchanged; no new dependencies. Local execution pending.

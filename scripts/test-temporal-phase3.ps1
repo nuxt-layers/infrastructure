@@ -22,7 +22,7 @@ function Invoke-Harness {
     param([string]$Mode,[string]$Id)
     Push-Location (Join-Path $root 'tests/temporal')
     try {
-        & pnpm exec tsx src/acceptance.ts $Mode $Id
+        & pnpm exec tsx src/phase3-acceptance.ts $Mode $Id
         if ($LASTEXITCODE -ne 0) { throw "Temporal harness failed: $Mode" }
     } finally { Pop-Location }
 }
@@ -60,12 +60,16 @@ try {
         $workflowId = 'infra-phase3-' + [guid]::NewGuid().ToString('N')
         Invoke-Harness 'execute' $workflowId
         if ($Stage -in @('All','Recovery')) {
+            $pendingId = $workflowId + '-pending'
+            Invoke-Harness 'suspend' $pendingId
             & docker compose @compose restart temporal postgres-temporal
             if ($LASTEXITCODE -ne 0) { throw 'Restart failed.' }
             & docker compose @compose up -d --wait
             if ($LASTEXITCODE -ne 0) { throw 'Restart readiness failed.' }
             Wait-Frontend
             Invoke-Harness 'verify' $workflowId
+            Invoke-Harness 'resume' $pendingId
+            Invoke-Harness 'verify' $pendingId
         }
     }
     Write-Host "PASS: selected Temporal Phase 3 stage $Stage (not complete Phase 3 acceptance)."
