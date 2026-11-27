@@ -2,11 +2,11 @@
 
 Infrastructure deployment and local acceptance support for Nuxt Layers. **This is not a Nuxt capability layer.**
 
-Governed by `nuxt-layers/architecture-rules` (reviewed master: `3436b1cc2a33401a7c3f08d5bc9ee9fe11ea93d2`). Infrastructure choices must not leak provider-specific implementations into capability contracts.
+Governed by [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture) (reviewed master `0cbc06560db54a7460b707012730887b01180a7d`; [governing PR #6](https://github.com/nuxt-layers/architecture/pull/6) pending adoption). Infrastructure choices must not leak provider-specific implementations into capability contracts.
 
 ## Current implementation status
 
-**Phase 2 — extension image candidate (local development only).** This branch provides a PostgreSQL 18 application server, an independently persisted PostgreSQL 18 Temporal compatibility-candidate database, a local Temporal development server and Web UI, plus PowerShell commands. **The application PostgreSQL image is now defined to build AGE, pg_textsearch and pgmq from versioned source tags and install pg_cron from apt; compilation and installation passed initial Windows testing; functional acceptance is pending.** Do not use this development stack in production. Follow `PLAN.md` for extension builds, production-ready Temporal schema management, security and backup acceptance.
+**Existing extension image candidate (local development only).** The current implementation provides a PostgreSQL 18 application server, an independently persisted PostgreSQL 18 Temporal compatibility-candidate database, a local Temporal development server and Web UI, plus PowerShell commands. **The application PostgreSQL image is now defined to build AGE, pg_textsearch and pgmq from versioned source tags and install pg_cron from apt; compilation and installation passed initial Windows testing; functional acceptance is pending.** Do not use this development stack in production. Follow `PLAN.md` for extension builds, production-ready Temporal schema management, security and backup acceptance.
 
 ## Windows 11 quick start
 
@@ -18,9 +18,9 @@ Copy-Item .env.example .env
 .\scripts\verify.ps1
 ```
 
-After cloning the PR, build and enable extensions with `docker compose --env-file .env -f compose/compose.yaml -f compose/compose.dev.yaml build postgres-app`, then `.\\scripts\\install-extensions.ps1` and `.\\scripts\\verify-extensions.ps1`. Full instructions: [PostgreSQL extensions](docs/POSTGRES-EXTENSIONS.md). Run the [functional acceptance suite](docs/POSTGRES-ACCEPTANCE.md) with `.\scripts\test-postgres.ps1` on an isolated local development stack.
+After cloning the repository, build and enable extensions with `docker compose --env-file .env -f compose/compose.yaml -f compose/compose.dev.yaml build postgres-app`, then `.\\scripts\\install-extensions.ps1` and `.\\scripts\\verify-extensions.ps1`. Full instructions: [PostgreSQL extensions](docs/POSTGRES-EXTENSIONS.md). Run the [functional acceptance suite](docs/POSTGRES-ACCEPTANCE.md) with `.\scripts\test-postgres.ps1` on an isolated local development stack.
 
-Application PostgreSQL: `127.0.0.1:5432` (database `nuxt_layers`). Temporal services are optional; PostgreSQL 18 for Temporal remains a local compatibility candidate pending tests and is not yet upstream-certified:\n
+Application PostgreSQL: `127.0.0.1:5432` (database `nuxt_layers`). Temporal services are optional; PostgreSQL 18 for Temporal remains a local compatibility candidate pending tests and is not yet upstream-certified:
 
 ```powershell
 .\scripts\start.ps1 -Temporal
@@ -46,8 +46,14 @@ Temporal gRPC: `127.0.0.1:7233`; Temporal Web UI: <http://127.0.0.1:8080>. Postg
 - Do not route infrastructure backups to the Hetzner application object-storage bucket; that bucket is reserved for application files and images.
 - Production access to PostgreSQL and Temporal must be private, with credential isolation, TLS across trust boundaries, tested backups and explicit deployment approval.
 
-See [local consuming-application connections](docs/APPLICATION-INTEGRATION.md), `PLAN.md` and `RESOURCES.md`. No CI/runtime acceptance has been claimed for this initial commit.
+See [local consuming-application connections](docs/APPLICATION-INTEGRATION.md), `PLAN.md` and `RESOURCES.md`. No new runtime acceptance is claimed by the Phase 1 documentation baseline.
 
 ### Temporal local acceptance
 
 See [Temporal acceptance](docs/TEMPORAL-ACCEPTANCE.md) for the startup, workflow execution and persistence checks. Do not reuse a populated PostgreSQL 16 Temporal volume with PostgreSQL 18.
+
+## Development baseline
+
+[Eight-phase plan](PLAN.md) · [Requirements INF-R01–INF-R210](docs/REQUIREMENTS.md) · [Artefact traceability](docs/ARTEFACT-TRACEABILITY.md) · [Technology and environment inventory](docs/TECHNOLOGY.md) · [Acceptance gates](docs/ACCEPTANCE.md).
+
+Full local provisioning at zero additional expenditure. Production Hetzner activation is deferred until agreed local MVP acceptance and explicit owner approval. Mandatory local security failures block production release; production-specific verification remains necessary.

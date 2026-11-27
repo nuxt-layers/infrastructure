@@ -1,53 +1,44 @@
 # Infrastructure Build Plan
 
-Authority: `nuxt-layers/architecture-rules`, master `3436b1cc2a33401a7c3f08d5bc9ee9fe11ea93d2` reviewed 2026-11-10. This repository is infrastructure, not a Nuxt capability.
+Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture), master reviewed `0cbc06560db54a7460b707012730887b01180a7d`; governing changes in [PR #6](https://github.com/nuxt-layers/architecture/pull/6) pending adoption. Infrastructure is not a software artefact or Nuxt Layer. Zero additional local spend; no Hetzner account or paid activation before explicit owner-approved local MVP acceptance.
 
-## Phase 1 — local baseline (this PR)
-- [x] Separate PostgreSQL 18 application store and PostgreSQL 18 Temporal persistence (compatibility candidate; local acceptance pending).
-- [x] Docker Compose with optional local Temporal and loopback-only ports.
-- [x] Windows PowerShell start, stop, verify and guarded reset commands.
-- [ ] Execute Docker Compose config, startup and SQL probes on Windows Docker Desktop.
-- [ ] Verify Temporal UI and run an end-to-end workflow using a real worker.
-- [ ] Pin deployed images by immutable digest after acceptance.
+## Phase 1 — Requirements and reconciliation
+- [x] Establish [requirements](docs/REQUIREMENTS.md), [93-artefact traceability](docs/ARTEFACT-TRACEABILITY.md), [technology and environment inventory](docs/TECHNOLOGY.md), [acceptance specification](docs/ACCEPTANCE.md).
+- [x] Record approved SeaweedFS, Apache Jena, restic, pgBackRest and Stripe Sandbox choices.
+- [ ] Merge governing PR and this baseline PR; no operational acceptance claimed.
 
-## Phase 2 — PostgreSQL extension image
-- [x] Define a custom PostgreSQL 18 image using tagged upstream source inputs; build acceptance, source commit and image digest verification pending.
-- [x] Configure AGE, pg_textsearch, pgmq and pg_cron installation/preloading; pending actual build and ABI/behaviour verification.
-- [x] Add version manifest, bootstrap SQL and explicit existing-volume enablement path; CI build, upgrades/downgrades and production pinning outstanding.
-- [ ] Add application cache schema with TTL expiry and tenant-aware keys; reserve UNLOGGED tables for regenerable content. (PR #3 tests only temporary cache classification and clean restart.)
-- [ ] Add durable outbox-to-pgmq acceptance, retry/idempotency and LISTEN/NOTIFY wakeup tests. (PR #3 adds base pgmq visibility and archive checks only.)
-- [ ] Verify graph tenant bounds and enforced search tenant filters. (PR #3 adds graph traversal and explicit predicate smoke tests, not security enforcement.)
-- [ ] Test extension-upgrade recovery with persistent volume. (PR #3 adds clean restart checks only.)
+## Phase 2 — PostgreSQL
+- [x] Existing PostgreSQL 18 application image, AGE/pg_textsearch/PGMQ/pg_cron build/enable definitions, PowerShell start/stop/verify/reset, functional smoke fixtures (PR #3).
+- [ ] Validate exact stable releases, source SHAs/digests, ABI and upgrades; add pg_trgm and conditional pgvector; preserve PostgreSQL-first search.
+- [ ] Provision non-owner scoped roles, migration/diagnostic roles, RLS fixtures, cross-owner/tenant negatives, pool pressure, source-owned outbox relay and LISTEN/NOTIFY wakeups; regenerable cache fixtures only (no global app cache schema).
+- [ ] Execute isolated SQL/restart/crash tests and verify consuming test host connectivity; record evidence. Do not assume historic smoke tests prove isolation.
 
-## Phase 2a — Functional acceptance PR #3
-- [x] Author AGE graph, BM25, pgmq delivery/visibility/archive, pg_cron execution and clean restart assertions.
-- [ ] Run the functional suite on Windows Docker Desktop and address failures before merge.
-- [ ] Add independent destructive crash/recovery and real tenant isolation tests in future isolated fixtures.
+## Phase 3 — Temporal
+- [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).
+- [ ] Confirm current supported server/PG18 compatibility, pin immutable images; controlled server/schema migration jobs, advanced visibility, private network, TLS, scoped namespaces/queues, graceful worker lifecycle.
+- [ ] Verify startup, real worker/history, restart, upgrade and recovery, published temporal-gateway contract. Never reuse PG16 volume unmodified.
 
-## Phase 2b — Temporal local acceptance PR #5
-- [x] Define PostgreSQL 18 Temporal container using the PG18 data-directory layout.
-- [x] Author a TypeScript SDK workflow/worker local acceptance harness and restart/history verification script.
-- [ ] Execute Temporal startup, workflow and persistence checks on Windows Docker Desktop or CI.
-- [x] Commit the local Temporal acceptance lockfile and use `--frozen-lockfile` during installation. Local/CI validation of the final change remains pending.
-- [ ] Verify PostgreSQL 18 against Temporal's current server release, since the published tested matrix stops at PostgreSQL 16.
-- [ ] Validate controlled upgrade/migration separately if a PostgreSQL 16 Temporal volume exists.
+## Phase 4 — Hosting environment
+- [ ] Provision production-representative local Linux VM using existing equipment, Coolify/Traefik, private networking, host security, resource budgets, secrets, UTC/NTP/NTS and qualified status.
+- [ ] Prepare Hetzner installation/production manifests without activating paid services; separate profiles, no dev credentials/override, exact provider assurance and region evidence.
+- [ ] Crypto inventory, approved profiles and negative isolation parity; capacity and no-cost verification.
 
-## Phase 2c — Consuming application integration PR #6
-- [x] Document host-to-Compose PostgreSQL and Temporal connection targets and provider-neutral integration boundaries.
-- [ ] Verify server-only read-only PostgreSQL and Temporal connectivity from the derived `nuxt-layers-test/infrastructure-test` app (separate PR).
-- [ ] Create scoped database diagnostic/runtime roles, migration roles and role-isolation acceptance.
-- [ ] Integrate using the published `temporal-gateway` contract when it exists; do not invent its API.
+## Phase 5 — Recovery
+- [ ] pgBackRest separate app/Temporal DB backup/PITR; restic file/config/eligible volumes, separate protected target, no live DB directory copying or application S3 backup target.
+- [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
-## Phase 3 — Temporal production
-- [ ] Pin current compatible Temporal server, UI and admin-tool image digests.
-- [ ] Replace auto-setup with temporalio/server and controlled SQL schema init/upgrade job.
-- [ ] Configure SQL-backed advanced visibility and proper runtime health checks.
-- [ ] Add private networks, scoped roles and secrets, TLS where crossing trust boundaries.
-- [ ] Integrate temporal-gateway without exposing Temporal SDK or persistence internals to other capabilities.
+## Phase 6 — Supporting infrastructure
+- [ ] SeaweedFS single-node local S3, repeatable buckets/credentials and same Storage adapter tests; Hetzner S3 configuration only.
+- [ ] Local DNS/CA/ACME and Site Hosting multi-site route/TLS reconciliation.
+- [ ] SMTP/OIDC/API/fault fixtures, Stripe sandbox and offline simulator; connector implementation coordinated with artefact owners.
+- [ ] Isolated Apache Jena bounded ontology/SHACL, selected processing/conditional collaboration and solver facilities; verify exact builds and licences.
 
-## Phase 4 — Coolify / operating acceptance
-- [ ] Separate development and production Compose projects; ensure local override cannot be deployed to production.
-- [ ] Define Hetzner VPS resource budgets and observability.
-- [ ] Implement scheduled PostgreSQL and Temporal backups to an approved backup target separate from the application object-storage bucket; restore-test both.
-- [ ] Test restart, unclean shutdown, persistence, cache loss/rebuild, retries and disaster recovery.
-- [ ] Record hosting provider evidence and regions per ADR-0014; document operator runbooks.
+## Phase 7 — Observability
+- [ ] Bounded logs, resource metrics, qualified readiness/time quality, alerts and optional collection/tracing profiles.
+- [ ] Operator access exclusively explicitly authorised host super-admins; no tenant business browsing. Optional GUI never prerequisite for recovery.
+
+## Phase 8 — Acceptance
+- [ ] Execute A01–A12 locally; record unresolved/failed gates, production-specific differences, deployment/recovery instructions and resource budgets.
+- [ ] Agree platform MVP separately; verify integrated user journeys and obtain explicit owner approval before Hetzner account/activation. Run production-specific acceptance afterwards.
+
+Existing technical documents remain the current local command/fixture references; historical acceptance claims are not newly verified. No assistant test/build execution; CI or owner validates.
