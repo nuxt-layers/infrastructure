@@ -1,12 +1,22 @@
 # PostgreSQL extension inputs — source tags selected 2026-11-10.
 # All source refs should additionally be resolved to immutable commit SHAs / artefact checksums
 # and images published by digest before deployment to production.
-postgres_base=postgres:18-bookworm
+postgres_base=postgres:18-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35
 apache_age_repository=https://github.com/apache/age
 apache_age_ref=PG18/v1.8.0-rc0
+apache_age_sha=e43dc1a12b78fba4acef9835b2b10379b8d243b4
 pg_textsearch_repository=https://github.com/timescale/pg_textsearch
 pg_textsearch_ref=v1.5.1
 pgmq_repository=https://github.com/pgmq/pgmq
 pgmq_ref=v1.13.0
 pg_cron_apt_package=postgresql-18-cron
 pg_cron_target_version=1.6.8
+pg_cron_apt_version=1.6.8-2.pgdg12+1
+postgres_apt_version_observed=18.7-1.pgdg12+5
+pg_textsearch_sha=fa142d049d08eac45a263f5abc250c8877ae076e
+pgmq_sha=32c075bb6dbed66a303d1a792393c93e36c09a97
+pgvector_repository=https://github.com/pgvector/pgvector
+pgvector_ref=v0.8.2
+pgvector_sha=cab9da72c04353f143bb06b42ab70a403daac64a
+# pg_trgm is provided by PostgreSQL contrib; verify availability in the base image.
+# Direct source/base/runtime cron pins recorded; exact apt build/transitive closure and final pinned rebuild remain outstanding.

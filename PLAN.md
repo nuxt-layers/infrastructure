@@ -1,17 +1,27 @@
 # Infrastructure Build Plan
 
-Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture), master reviewed `0cbc06560db54a7460b707012730887b01180a7d`; governing changes in [PR #6](https://github.com/nuxt-layers/architecture/pull/6) pending adoption. Infrastructure is not a software artefact or Nuxt Layer. Zero additional local spend; no Hetzner account or paid activation before explicit owner-approved local MVP acceptance.
+Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture), master reviewed `e9dac240c16891fcbed9669228dac6cd5cde9c3c`; governing PR #6 merged. Infrastructure is not a software artefact or Nuxt Layer. Zero additional local spend; no Hetzner account or paid activation before explicit owner-approved local MVP acceptance.
 
 ## Phase 1 — Requirements and reconciliation
 - [x] Establish [requirements](docs/REQUIREMENTS.md), [93-artefact traceability](docs/ARTEFACT-TRACEABILITY.md), [technology and environment inventory](docs/TECHNOLOGY.md), [acceptance specification](docs/ACCEPTANCE.md).
 - [x] Record approved SeaweedFS, Apache Jena, restic, pgBackRest and Stripe Sandbox choices.
-- [ ] Merge governing PR and this baseline PR; no operational acceptance claimed.
+- [x] Phase 1 PRs #6 (architecture) and #7 (infrastructure) merged; no operational acceptance claimed.
 
 ## Phase 2 — PostgreSQL
 - [x] Existing PostgreSQL 18 application image, AGE/pg_textsearch/PGMQ/pg_cron build/enable definitions, PowerShell start/stop/verify/reset, functional smoke fixtures (PR #3).
-- [ ] Validate exact stable releases, source SHAs/digests, ABI and upgrades; add pg_trgm and conditional pgvector; preserve PostgreSQL-first search.
-- [ ] Provision non-owner scoped roles, migration/diagnostic roles, RLS fixtures, cross-owner/tenant negatives, pool pressure, source-owned outbox relay and LISTEN/NOTIFY wakeups; regenerable cache fixtures only (no global app cache schema).
-- [ ] Execute isolated SQL/restart/crash tests and verify consuming test host connectivity; record evidence. Do not assume historic smoke tests prove isolation.
+- [x] Author pg_trgm enablement, optional pgvector image support and immutable checks for AGE/pg_textsearch/PGMQ/pgvector.
+- [x] Author configurable digest-qualified base/exact cron package inputs, runtime build evidence and controlled upgrade procedure.
+- [x] Record tested base digest, direct source commits and observed PostgreSQL/pg_cron package versions; pin cron package.
+- [x] Rebuild with exact cron pin and verify runtime package versions.
+- [ ] Verify complete apt/build provenance and execute approved upgrade path when selected; no release upgrade assumed. Retain tested local baseline; production activation remains blocked.
+- [x] Author per-owner provisioning template and isolated negative RLS/schema/role, search and outbox fixtures; no global app cache schema.
+- [x] Author real TCP login, denied unscoped extension access, committed outbox retry/deduplication, cross-session LISTEN/NOTIFY and isolated abrupt crash fixtures.
+- [x] Author scoped extension candidate fixtures and role connection-limit refusal/recovery.
+- [x] Author consuming host restricted diagnostics/client pool in infrastructure-test PR #2.
+- [x] Owner executed all seven Phase 2 harness stages across local runs; restricted graph, notification, role pressure, committed outbox and abrupt crash passed. See docs/POSTGRES-PHASE-2.md.
+- [x] Owner ran all eight stages together on exact cron-pinned build (1396af5), including functional cron and clean restart; all passed.
+- [x] Consuming Nuxt host acceptance passed on 27 November 2026: restricted login, private data denial and bounded client-pool recovery; automated launcher b5269ea.
+- [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
 - [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).
