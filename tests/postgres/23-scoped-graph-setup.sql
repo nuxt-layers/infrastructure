@@ -13,10 +13,12 @@ REVOKE ALL ON SCHEMA infra_scoped_graph FROM PUBLIC;
 GRANT USAGE ON SCHEMA ag_catalog,infra_graph_a TO nl_fixture_graph;
 GRANT SELECT ON ALL TABLES IN SCHEMA ag_catalog,infra_graph_a TO nl_fixture_graph;
 GRANT EXECUTE ON FUNCTION ag_catalog.cypher(name,cstring,ag_catalog.agtype) TO nl_fixture_graph;
--- AGE may require LOAD in a privileged session; if the bounded function cannot
--- run in a real runtime connection, fail acceptance rather than grant superuser.
+-- Administrator sets a database-scoped session preload only for this fixture login.
+-- No global preload and no superuser or arbitrary LOAD rights for runtime.
+ALTER ROLE nl_accept_runtime IN DATABASE fixture_db SET session_preload_libraries = 'age';
+-- If bounded execution fails, stop acceptance; never grant superuser.
 SET ROLE nl_fixture_graph;
-CREATE FUNCTION infra_scoped_graph.names_a() RETURNS SETOF text LANGUAGE sql SECURITY DEFINER SET search_path=ag_catalog,pg_catalog,pg_temp AS $$
+CREATE FUNCTION infra_scoped_graph.names_a() RETURNS SETOF text LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,ag_catalog,pg_temp AS $$
  SELECT v::text FROM ag_catalog.cypher('infra_graph_a',$cypher$ MATCH (p:Person) RETURN p.name $cypher$) AS (v ag_catalog.agtype)
 $$;
 REVOKE ALL ON FUNCTION infra_scoped_graph.names_a() FROM PUBLIC;

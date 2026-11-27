@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param()
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 # Dedicated ephemeral project, no host port override and no existing data volumes.
 $project = 'nl-pg2-' + [guid]::NewGuid().ToString('N').Substring(0,12)
@@ -8,6 +9,10 @@ $envFile = Join-Path ([System.IO.Path]::GetTempPath()) "$project.env"
 $secret = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
 $compose = @('--project-name',$project,'--env-file',$envFile,'-f',(Join-Path $root 'compose/compose.yaml'))
 try {
+    # Shell environment takes precedence over Compose env files. Refuse overrides.
+    foreach ($name in @('APP_POSTGRES_USER','APP_POSTGRES_PASSWORD','APP_POSTGRES_DB','COMPOSE_PROFILES','COMPOSE_FILE')) {
+        if (Test-Path "Env:$name") { throw "Unset $name before running isolated acceptance." }
+    }
     @("APP_POSTGRES_USER=fixture_admin","APP_POSTGRES_PASSWORD=$secret","APP_POSTGRES_DB=fixture_db","TEMPORAL_POSTGRES_USER=unused","TEMPORAL_POSTGRES_PASSWORD=$secret","TEMPORAL_DEV_VERSION=1.27.2","TEMPORAL_UI_VERSION=2.37.2") | Set-Content -Encoding utf8 $envFile
     & docker compose @compose up -d --build --wait postgres-app
     if ($LASTEXITCODE -ne 0) { throw 'Isolated PostgreSQL startup failed.' }
@@ -43,9 +48,11 @@ try {
     }
     # Separate psql processes: listener establishes LISTEN then signals readiness
     # using an advisory lock. Publisher waits for that lock, not an arbitrary sleep.
-    $listener = Start-Job -ArgumentList (,$compose) -ScriptBlock {
-        param($argsForCompose)
-        @("LISTEN infra_phase2_wake;", "SELECT pg_advisory_lock(827361);", "SELECT pg_sleep(8);", "SELECT pg_advisory_unlock(827361);") | & docker compose @argsForCompose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
+    $composeJson = ConvertTo-Json -InputObject $compose -Compress
+    $listener = Start-Job -ArgumentList $composeJson -ScriptBlock {
+        param($json)
+        $argsForCompose = @(ConvertFrom-Json $json)
+        @("LISTEN infra_phase2_wake;", "SELECT pg_advisory_lock(827361);", "SELECT pg_sleep(30);", "SELECT pg_advisory_unlock(827361);") | & docker compose @argsForCompose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
         if ($LASTEXITCODE -ne 0) { throw 'Listener failed.' }
     }
     try {
@@ -65,8 +72,9 @@ try {
     }
     # Role connection quota is an infrastructure pressure fixture, not a client pool test.
     Invoke-Admin 'ALTER ROLE nl_accept_runtime CONNECTION LIMIT 1;'
-    $holder = Start-Job -ArgumentList @((,$compose)[0],$runtimeSecret) -ScriptBlock {
-        param($argsForCompose,$password)
+    $holder = Start-Job -ArgumentList $composeJson,$runtimeSecret -ScriptBlock {
+        param($json,$password)
+        $argsForCompose = @(ConvertFrom-Json $json)
         @('SELECT pg_advisory_lock(827362);','SELECT pg_sleep(8);') | & docker compose @argsForCompose exec -T -e "PGPASSWORD=$password" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U nl_accept_runtime -d fixture_db
         if ($LASTEXITCODE -ne 0) { throw 'Connection holder failed.' }
     }
@@ -91,6 +99,23 @@ try {
     }
     Invoke-Fixture '12-committed-outbox.sql'
     Invoke-Fixture '13-crash-setup.sql'
+    $containerId = & docker compose @compose ps -q postgres-app
+    if ($LASTEXITCODE -ne 0 -or -not $containerId) { throw 'Cannot identify crash fixture container.' }
+    $actualProject = & docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' $containerId
+    if ($LASTEXITCODE -ne 0 -or $actualProject -ne $project -or $project -notmatch '^nl-pg2-[0-9a-f]{12}
+    # SIGKILL only the uniquely named ephemeral project, never shared volumes.
+    & docker compose @compose kill -s SIGKILL postgres-app
+    if ($LASTEXITCODE -ne 0) { throw 'Crash injection failed.' }
+    & docker compose @compose up -d --wait postgres-app
+    if ($LASTEXITCODE -ne 0) { throw 'Crash recovery startup failed.' }
+    Invoke-Fixture '14-crash-verify.sql'
+    Write-Host 'PASS: isolated Phase 2 authored SQL, login, notify and crash fixtures (not full Phase 2 acceptance).'
+} finally {
+    & docker compose @compose down --volumes --remove-orphans
+    if ($LASTEXITCODE -ne 0) { Write-Warning "Cleanup failed for isolated project $project; inspect before removing." }
+    Remove-Item $envFile -Force -ErrorAction SilentlyContinue
+}
+) { throw 'Refusing crash outside isolated fixture.' }
     # SIGKILL only the uniquely named ephemeral project, never shared volumes.
     & docker compose @compose kill -s SIGKILL postgres-app
     if ($LASTEXITCODE -ne 0) { throw 'Crash injection failed.' }

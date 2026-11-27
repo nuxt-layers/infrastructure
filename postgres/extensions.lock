@@ -4,6 +4,7 @@
 postgres_base=postgres:18-bookworm
 apache_age_repository=https://github.com/apache/age
 apache_age_ref=PG18/v1.8.0-rc0
+apache_age_sha=e43dc1a12b78fba4acef9835b2b10379b8d243b4
 pg_textsearch_repository=https://github.com/timescale/pg_textsearch
 pg_textsearch_ref=v1.5.1
 pgmq_repository=https://github.com/pgmq/pgmq
@@ -16,4 +17,4 @@ pgvector_repository=https://github.com/pgvector/pgvector
 pgvector_ref=v0.8.2
 pgvector_sha=cab9da72c04353f143bb06b42ab70a403daac64a
 # pg_trgm is provided by PostgreSQL contrib; verify availability in the base image.
-# AGE immutable ref, base digest, pg_cron package pin and ABI acceptance remain outstanding.
+# Base digest, pg_cron package pin and ABI acceptance remain outstanding.

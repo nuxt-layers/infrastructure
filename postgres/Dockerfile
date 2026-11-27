@@ -3,6 +3,7 @@
 ARG POSTGRES_BASE=postgres:18-bookworm
 FROM ${POSTGRES_BASE} AS extensions
 ARG AGE_REF=PG18/v1.8.0-rc0
+ARG AGE_SHA=e43dc1a12b78fba4acef9835b2b10379b8d243b4
 ARG TEXTSEARCH_REF=v1.5.1
 ARG PGMQ_REF=v1.13.0
 ARG TEXTSEARCH_SHA=fa142d049d08eac45a263f5abc250c8877ae076e
@@ -14,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 ENV PG_CONFIG=/usr/lib/postgresql/18/bin/pg_config
 RUN git clone --depth 1 --branch "${AGE_REF}" https://github.com/apache/age.git /src/age \
+    && test "$(git -C /src/age rev-parse HEAD)" = "${AGE_SHA}" \
     && make -C /src/age PG_CONFIG="${PG_CONFIG}" -j2 \
     && make -C /src/age PG_CONFIG="${PG_CONFIG}" install
 RUN git clone --depth 1 --branch "${TEXTSEARCH_REF}" https://github.com/timescale/pg_textsearch.git /src/pg_textsearch \

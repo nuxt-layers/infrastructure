@@ -2,7 +2,7 @@
 
 ## Build identity
 
-Development defaults remain mutable until verified. Compose accepts POSTGRES_BASE as a digest-qualified official PostgreSQL image and CRON_PACKAGE_VERSION as an exact apt version. Both stages use the same base reference; builder apt repositories and transitive dependencies must also be captured/pinned for a reproducible release. Existing AGE RC tag is provisional; resolve its commit and verify it in the Dockerfile before release. Do not claim output image identity from a source tag.
+Development defaults remain mutable until verified. Compose accepts POSTGRES_BASE as a digest-qualified official PostgreSQL image and CRON_PACKAGE_VERSION as an exact apt version. Both stages use the same base reference; builder apt repositories and transitive dependencies must also be captured/pinned for a reproducible release. Existing AGE RC tag remains provisional for acceptance; its commit is now verified in the Dockerfile. Do not claim output image identity from a source tag.
 
 After local build/start, run:
 ```powershell
@@ -26,4 +26,4 @@ Companion [infrastructure-test PR #2](https://github.com/nuxt-layers-test/infras
 
 ## Outstanding
 
-Exact base digest, AGE commit, apt version and complete dependency provenance remain unresolved until verified. No specific extension upgrade is authorised merely because a new release exists. Runtime acceptance, graph/queue privilege compatibility, search inference resistance, real host diagnostics and recovery remain release gates.
+Exact base digest, apt version and complete dependency provenance remain unresolved until verified. No specific extension upgrade is authorised merely because a new release exists. Runtime acceptance, graph/queue privilege compatibility, search inference resistance, real host diagnostics and recovery remain release gates.
