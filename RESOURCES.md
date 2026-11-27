@@ -1,9 +1,9 @@
 # Resources
 
-- [Nuxt Layers architecture rules](https://github.com/nuxt-layers/architecture-rules) — governing architecture; reviewed master SHA `3436b1cc2a33401a7c3f08d5bc9ee9fe11ea93d2`.
-- [ADR-0006 — data store security](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0006-polyglot-persistence-and-data-store-security.md).
-- [ADR-0014 — hosting and storage providers](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/decisions/ADR-0014-hosting-and-storage-providers.md).
-- [Security baseline](https://github.com/nuxt-layers/architecture-rules/blob/master/docs/security.md).
+- [Nuxt Layers architecture rules](https://github.com/nuxt-layers/architecture) — governing architecture; reviewed master SHA `0cbc06560db54a7460b707012730887b01180a7d`.
+- [ADR-0006 — data store security](https://github.com/nuxt-layers/architecture/blob/master/docs/decisions/ADR-0006-polyglot-persistence-and-data-store-security.md).
+- [ADR-0014 — hosting and storage providers](https://github.com/nuxt-layers/architecture/blob/master/docs/decisions/ADR-0014-hosting-and-storage-providers.md).
+- [Security baseline](https://github.com/nuxt-layers/architecture/blob/master/docs/standards/security-standard.md).
 - [PostgreSQL official Docker image](https://hub.docker.com/_/postgres) — persistent directory differs at PostgreSQL 18.
 - [Temporal Docker images and auto-setup](https://github.com/temporalio/docker-builds/blob/main/docker-readme/auto-setup.md) — development reference only.
 - [Archived Temporal Compose reference](https://github.com/temporalio/docker-compose/blob/main/docker-compose-postgres.yml) — archived 2026-01-05; not production guidance.
@@ -36,3 +36,17 @@
 - [Temporal TypeScript SDK worker example](https://github.com/temporalio/samples-typescript/blob/main/hello-world/src/worker.ts).
 - [Temporal TypeScript SDK worker reference](https://typescript.temporal.io/api/namespaces/worker).
 - [PostgreSQL 18 Docker layout](https://hub.docker.com/_/postgres) — `/var/lib/postgresql`, not `/var/lib/postgresql/data`.
+
+## Approved programme references (selection, not release verification)
+
+- [Infrastructure specification](https://github.com/nuxt-layers/architecture/blob/master/docs/infrastructure/infrastructure/infrastructure-record.md)
+- [Governing Phase 1 PR](https://github.com/nuxt-layers/architecture/pull/6)
+- [SeaweedFS](https://github.com/seaweedfs/seaweedfs)
+- [Apache Jena](https://jena.apache.org/)
+- [restic](https://restic.net/)
+- [pgBackRest](https://pgbackrest.org/)
+- [Coolify](https://coolify.io/docs/)
+- [Stripe testing](https://docs.stripe.com/testing), [sandboxes](https://docs.stripe.com/sandboxes), [CLI](https://docs.stripe.com/stripe-cli), [Node SDK](https://github.com/stripe/stripe-node)
+- [NIST PQC](https://csrc.nist.gov/projects/post-quantum-cryptography), [Node crypto](https://nodejs.org/api/crypto.html), [noble post-quantum](https://github.com/paulmillr/noble-post-quantum), [shamir-secret-sharing](https://www.npmjs.com/package/shamir-secret-sharing)
+
+Exact selected versions, licences, transitive dependencies and provider access remain implementation acceptance matters.
