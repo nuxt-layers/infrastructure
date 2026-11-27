@@ -24,6 +24,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
+- [x] Author standalone disposable acceptance stack and selectable startup/execution/recovery harness; see docs/TEMPORAL-PHASE-3.md. Local execution pending.
 - [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).
 - [ ] Confirm current supported server/PG18 compatibility, pin immutable images; controlled server/schema migration jobs, advanced visibility, private network, TLS, scoped namespaces/queues, graceful worker lifecycle.
 - [ ] Verify startup, real worker/history, restart, upgrade and recovery, published temporal-gateway contract. Never reuse PG16 volume unmodified.
