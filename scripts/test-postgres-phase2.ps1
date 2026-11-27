@@ -36,6 +36,11 @@ try {
         Get-Content -Raw (Join-Path $root "tests/postgres/$($login.File)") | & docker compose @compose exec -T -e "PGPASSWORD=$($login.Secret)" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U $login.Role -d fixture_db
         if ($LASTEXITCODE -ne 0) { throw "Real login fixture failed: $($login.Role)" }
     }
+    foreach ($pair in @(@{Setup='19-scoped-search-setup.sql';Runtime='20-scoped-search-runtime.sql'},@{Setup='21-scoped-transport-setup.sql';Runtime='22-scoped-transport-runtime.sql'},@{Setup='23-scoped-graph-setup.sql';Runtime='24-scoped-graph-runtime.sql'})) {
+        Invoke-Fixture $pair.Setup
+        Get-Content -Raw (Join-Path $root "tests/postgres/$($pair.Runtime)") | & docker compose @compose exec -T -e "PGPASSWORD=$runtimeSecret" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U nl_accept_runtime -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw "Scoped extension fixture failed: $($pair.Runtime)" }
+    }
     # Separate psql processes: listener establishes LISTEN then signals readiness
     # using an advisory lock. Publisher waits for that lock, not an arbitrary sleep.
     $listener = Start-Job -ArgumentList (,$compose) -ScriptBlock {
@@ -57,6 +62,32 @@ try {
         if ($listener.State -ne 'Completed' -or $received -notmatch 'fixture-event') { throw 'Cross-session notification missing.' }
     } finally {
         Remove-Job $listener -Force
+    }
+    # Role connection quota is an infrastructure pressure fixture, not a client pool test.
+    Invoke-Admin 'ALTER ROLE nl_accept_runtime CONNECTION LIMIT 1;'
+    $holder = Start-Job -ArgumentList @((,$compose)[0],$runtimeSecret) -ScriptBlock {
+        param($argsForCompose,$password)
+        @('SELECT pg_advisory_lock(827362);','SELECT pg_sleep(8);') | & docker compose @argsForCompose exec -T -e "PGPASSWORD=$password" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U nl_accept_runtime -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw 'Connection holder failed.' }
+    }
+    try {
+        $ready = $false
+        for ($i=0; $i -lt 40; $i++) {
+            $probe = & docker compose @compose exec -T postgres-app psql -X -At -U fixture_admin -d fixture_db -c "SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND objid=827362 AND granted)"
+            if ($LASTEXITCODE -ne 0) { throw 'Connection holder probe failed.' }
+            if (($probe | Out-String).Trim() -eq 't') { $ready=$true; break }
+            Start-Sleep -Milliseconds 100
+        }
+        if (-not $ready) { throw 'Connection holder not ready.' }
+        $rejected = & docker compose @compose exec -T -e "PGPASSWORD=$runtimeSecret" -e LC_ALL=C postgres-app psql -X -h 127.0.0.1 -U nl_accept_runtime -d fixture_db -c 'SELECT 1' 2>&1
+        if ($LASTEXITCODE -eq 0 -or ($rejected | Out-String) -notmatch 'too many connections for role') { throw 'Expected role connection limit rejection.' }
+        Receive-Job $holder -Wait -ErrorAction Stop | Out-Null
+        if ($holder.State -ne 'Completed') { throw 'Connection holder failed.' }
+        & docker compose @compose exec -T -e "PGPASSWORD=$runtimeSecret" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U nl_accept_runtime -d fixture_db -c 'SELECT 1'
+        if ($LASTEXITCODE -ne 0) { throw 'Connection recovery failed.' }
+    } finally {
+        Remove-Job $holder -Force
+        Invoke-Admin 'ALTER ROLE nl_accept_runtime CONNECTION LIMIT -1;'
     }
     Invoke-Fixture '12-committed-outbox.sql'
     Invoke-Fixture '13-crash-setup.sql'

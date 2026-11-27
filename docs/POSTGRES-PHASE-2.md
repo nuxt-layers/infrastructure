@@ -17,3 +17,7 @@ Execute postgres/provision/owner.sql as operator with psql -v owner_schema=<sche
 - Exact image/apt and AGE source pinning outstanding; no production readiness.
 
 The harness uses synthetic passwords only, authenticates via TCP and disposes of its dedicated project and volumes. SIGKILL is deliberately restricted to that project. The source/consumer receipt tables are fixtures, not shared platform schemas. Notification is a wake-up signal, not durable delivery.
+
+## Scoped extension candidates and pressure
+
+Fixtures 19–24 exercise real runtime login, RLS-filtered BM25/vector results and fixed-scope graph/queue functions under dedicated NOLOGIN owners. They are deliberately fail-closed candidates, not production adapters. Graph execution may require further AGE privilege/load compatibility work; PGMQ signatures and table grants must be validated against the pinned release. No arbitrary Cypher or queue name is passed to a privileged function. BM25 corpus statistics, approximate vector recall and timing may leak information even when returned rows are scoped: separate tenant indexes/databases where confidentiality requires, and assess inference separately. A PostgreSQL role connection limit fixture proves refusal and recovery, not a consuming host's client-pool timeout/queue behaviour. All results pending execution.
