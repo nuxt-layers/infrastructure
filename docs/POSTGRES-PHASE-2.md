@@ -21,3 +21,7 @@ The harness uses synthetic passwords only, authenticates via TCP and disposes of
 ## Scoped extension candidates and pressure
 
 Fixtures 19–24 exercise real runtime login, RLS-filtered BM25/vector results and fixed-scope graph/queue functions under dedicated NOLOGIN owners. They are deliberately fail-closed candidates, not production adapters. Graph execution may require further AGE privilege/load compatibility work; PGMQ signatures and table grants must be validated against the pinned release. No arbitrary Cypher or queue name is passed to a privileged function. BM25 corpus statistics, approximate vector recall and timing may leak information even when returned rows are scoped: separate tenant indexes/databases where confidentiality requires, and assess inference separately. A PostgreSQL role connection limit fixture proves refusal and recovery, not a consuming host's client-pool timeout/queue behaviour. All results pending execution.
+
+## Reproducibility and host integration
+
+See [build and upgrade acceptance](POSTGRES-UPGRADE.md) for digest-qualified base and exact cron package inputs, observed runtime evidence and controlled upgrade procedure. Companion infrastructure-test PR #2 authors client-pool pressure/recovery and rejects privileged diagnostic logins. No exact release provenance, upgrade or host acceptance has been proven.

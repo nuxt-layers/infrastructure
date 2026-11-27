@@ -10,10 +10,12 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 ## Phase 2 — PostgreSQL
 - [x] Existing PostgreSQL 18 application image, AGE/pg_textsearch/PGMQ/pg_cron build/enable definitions, PowerShell start/stop/verify/reset, functional smoke fixtures (PR #3).
 - [x] Author pg_trgm enablement, optional pgvector image support and immutable checks for pg_textsearch/PGMQ/pgvector.
-- [ ] Validate exact stable releases, AGE source SHA, base/apt/output digests, ABI and upgrades; no release upgrade assumed.
+- [x] Author configurable digest-qualified base/exact cron package inputs, runtime build evidence and controlled upgrade procedure.
+- [ ] Validate exact stable releases, AGE source SHA, base/apt/output digests, ABI and execute upgrades; no release upgrade assumed.
 - [x] Author per-owner provisioning template and isolated negative RLS/schema/role, search and outbox fixtures; no global app cache schema.
 - [x] Author real TCP login, denied unscoped extension access, committed outbox retry/deduplication, cross-session LISTEN/NOTIFY and isolated abrupt crash fixtures.
 - [x] Author scoped extension candidate fixtures and role connection-limit refusal/recovery.
+- [x] Author consuming host restricted diagnostics/client pool in infrastructure-test PR #2.
 - [ ] Execute/review all fixtures; inference resistance, client pool pressure, upgrade and consuming-host acceptance remain outstanding.
 - [ ] Execute isolated SQL/restart/crash tests and verify consuming test host connectivity; record evidence. Do not assume historic smoke tests prove isolation.
 

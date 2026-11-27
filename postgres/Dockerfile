@@ -1,6 +1,7 @@
 # Development image only until build, extension, upgrade and restore acceptance passes.
 # The build stage and runtime use the same PostgreSQL major release and Debian variant.
-FROM postgres:18-bookworm AS extensions
+ARG POSTGRES_BASE=postgres:18-bookworm
+FROM ${POSTGRES_BASE} AS extensions
 ARG AGE_REF=PG18/v1.8.0-rc0
 ARG TEXTSEARCH_REF=v1.5.1
 ARG PGMQ_REF=v1.13.0
@@ -32,9 +33,10 @@ RUN git init /src/pgvector \
     && make -C /src/pgvector PG_CONFIG="${PG_CONFIG}" OPTFLAGS="" -j2 \
     && make -C /src/pgvector PG_CONFIG="${PG_CONFIG}" install
 
-FROM postgres:18-bookworm
+FROM ${POSTGRES_BASE}
+ARG CRON_PACKAGE_VERSION
 # pg_cron requires the extension binary in the runtime, not only the builder.
-RUN apt-get update && apt-get install -y --no-install-recommends postgresql-18-cron \
+RUN apt-get update && apt-get install -y --no-install-recommends "postgresql-18-cron${CRON_PACKAGE_VERSION:+=$CRON_PACKAGE_VERSION}" \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=extensions /usr/lib/postgresql/18/lib/vector.so /usr/lib/postgresql/18/lib/
 COPY --from=extensions /usr/lib/postgresql/18/lib/age.so /usr/lib/postgresql/18/lib/
