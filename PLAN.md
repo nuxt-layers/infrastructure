@@ -12,7 +12,8 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [x] Author pg_trgm enablement, optional pgvector image support and immutable checks for pg_textsearch/PGMQ/pgvector.
 - [ ] Validate exact stable releases, AGE source SHA, base/apt/output digests, ABI and upgrades; no release upgrade assumed.
 - [x] Author per-owner provisioning template and isolated negative RLS/schema/role, search and outbox fixtures; no global app cache schema.
-- [ ] Execute and review fixture results; pool pressure, LISTEN/NOTIFY cross-session, upgrade and crash acceptance remain outstanding.
+- [x] Author real TCP login, denied unscoped extension access, committed outbox retry/deduplication, cross-session LISTEN/NOTIFY and isolated abrupt crash fixtures.
+- [ ] Execute/review all fixture results; pool pressure, positive scoped extension access, upgrade and consuming-host acceptance remain outstanding.
 - [ ] Execute isolated SQL/restart/crash tests and verify consuming test host connectivity; record evidence. Do not assume historic smoke tests prove isolation.
 
 ## Phase 3 — Temporal

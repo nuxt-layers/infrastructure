@@ -15,7 +15,58 @@ try {
         Get-Content -Raw (Join-Path $root "tests/postgres/$file") | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
         if ($LASTEXITCODE -ne 0) { throw "Phase 2 fixture failed: $file" }
     }
-    Write-Host 'PASS: isolated Phase 2 SQL fixtures (not full Phase 2 acceptance).'
+    function Invoke-Fixture {
+        param([string]$File)
+        Get-Content -Raw (Join-Path $root "tests/postgres/$File") | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw "Fixture failed: $File" }
+    }
+    function Invoke-Admin {
+        param([string]$Sql)
+        $Sql | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw 'Admin fixture failed.' }
+    }
+    Get-Content -Raw (Join-Path $root 'postgres/provision/owner.sql') | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db -v owner_schema=infra_login -v migration_role=nl_accept_migration -v runtime_role=nl_accept_runtime -v diagnostic_role=nl_accept_diagnostic
+    if ($LASTEXITCODE -ne 0) { throw 'Owner provisioning failed.' }
+    $migrationSecret = [guid]::NewGuid().ToString('N')
+    $runtimeSecret = [guid]::NewGuid().ToString('N')
+    $diagnosticSecret = [guid]::NewGuid().ToString('N')
+    Get-Content -Raw (Join-Path $root 'tests/postgres/15-login-setup.sql') | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db -v "migration_secret=$migrationSecret" -v "runtime_secret=$runtimeSecret" -v "diagnostic_secret=$diagnosticSecret"
+    if ($LASTEXITCODE -ne 0) { throw 'Login setup failed.' }
+    foreach ($login in @(@{Role='nl_accept_migration';Secret=$migrationSecret;File='16-login-migration.sql'},@{Role='nl_accept_runtime';Secret=$runtimeSecret;File='17-login-runtime.sql'},@{Role='nl_accept_diagnostic';Secret=$diagnosticSecret;File='18-login-diagnostic.sql'})) {
+        Get-Content -Raw (Join-Path $root "tests/postgres/$($login.File)") | & docker compose @compose exec -T -e "PGPASSWORD=$($login.Secret)" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U $login.Role -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw "Real login fixture failed: $($login.Role)" }
+    }
+    # Separate psql processes: listener establishes LISTEN then signals readiness
+    # using an advisory lock. Publisher waits for that lock, not an arbitrary sleep.
+    $listener = Start-Job -ArgumentList (,$compose) -ScriptBlock {
+        param($argsForCompose)
+        @("LISTEN infra_phase2_wake;", "SELECT pg_advisory_lock(827361);", "SELECT pg_sleep(8);", "SELECT pg_advisory_unlock(827361);") | & docker compose @argsForCompose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw 'Listener failed.' }
+    }
+    try {
+        $ready = $false
+        for ($i=0; $i -lt 40; $i++) {
+            $probe = & docker compose @compose exec -T postgres-app psql -X -At -U fixture_admin -d fixture_db -c "SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND objid=827361 AND granted)"
+            if ($LASTEXITCODE -ne 0) { throw 'Listener probe failed.' }
+            if (($probe | Out-String).Trim() -eq 't') { $ready=$true; break }
+            Start-Sleep -Milliseconds 100
+        }
+        if (-not $ready) { throw 'Listener did not establish readiness.' }
+        Invoke-Admin "NOTIFY infra_phase2_wake, 'fixture-event';"
+        $received = Receive-Job $listener -Wait -ErrorAction Stop | Out-String
+        if ($listener.State -ne 'Completed' -or $received -notmatch 'fixture-event') { throw 'Cross-session notification missing.' }
+    } finally {
+        Remove-Job $listener -Force
+    }
+    Invoke-Fixture '12-committed-outbox.sql'
+    Invoke-Fixture '13-crash-setup.sql'
+    # SIGKILL only the uniquely named ephemeral project, never shared volumes.
+    & docker compose @compose kill -s SIGKILL postgres-app
+    if ($LASTEXITCODE -ne 0) { throw 'Crash injection failed.' }
+    & docker compose @compose up -d --wait postgres-app
+    if ($LASTEXITCODE -ne 0) { throw 'Crash recovery startup failed.' }
+    Invoke-Fixture '14-crash-verify.sql'
+    Write-Host 'PASS: isolated Phase 2 authored SQL, login, notify and crash fixtures (not full Phase 2 acceptance).'
 } finally {
     & docker compose @compose down --volumes --remove-orphans
     if ($LASTEXITCODE -ne 0) { Write-Warning "Cleanup failed for isolated project $project; inspect before removing." }
