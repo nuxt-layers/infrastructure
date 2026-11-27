@@ -11,13 +11,14 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [x] Existing PostgreSQL 18 application image, AGE/pg_textsearch/PGMQ/pg_cron build/enable definitions, PowerShell start/stop/verify/reset, functional smoke fixtures (PR #3).
 - [x] Author pg_trgm enablement, optional pgvector image support and immutable checks for AGE/pg_textsearch/PGMQ/pgvector.
 - [x] Author configurable digest-qualified base/exact cron package inputs, runtime build evidence and controlled upgrade procedure.
-- [ ] Validate exact stable releases, base/apt/output digests, ABI and execute upgrades; no release upgrade assumed.
+- [x] Record tested base digest, direct source commits and observed PostgreSQL/pg_cron package versions; pin cron package.
+- [ ] Rebuild with exact cron pin, verify complete apt/build provenance and execute approved upgrade path when selected; no release upgrade assumed.
 - [x] Author per-owner provisioning template and isolated negative RLS/schema/role, search and outbox fixtures; no global app cache schema.
 - [x] Author real TCP login, denied unscoped extension access, committed outbox retry/deduplication, cross-session LISTEN/NOTIFY and isolated abrupt crash fixtures.
 - [x] Author scoped extension candidate fixtures and role connection-limit refusal/recovery.
 - [x] Author consuming host restricted diagnostics/client pool in infrastructure-test PR #2.
-- [ ] Execute/review all fixtures; inference resistance, client pool pressure, upgrade and consuming-host acceptance remain outstanding.
-- [ ] Execute isolated SQL/restart/crash tests and verify consuming test host connectivity; record evidence. Do not assume historic smoke tests prove isolation.
+- [x] Owner executed all seven Phase 2 harness stages across local runs; restricted graph, notification, role pressure, committed outbox and abrupt crash passed. See docs/POSTGRES-PHASE-2.md.
+- [ ] Run final combined harness on exact cron-pinned build, including functional cron and clean restart acceptance; consuming host, inference resistance and upgrade remain separate gates.
 
 ## Phase 3 — Temporal
 - [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).

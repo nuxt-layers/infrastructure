@@ -36,7 +36,7 @@ RUN git init /src/pgvector \
     && make -C /src/pgvector PG_CONFIG="${PG_CONFIG}" install
 
 FROM ${POSTGRES_BASE}
-ARG CRON_PACKAGE_VERSION
+ARG CRON_PACKAGE_VERSION=1.6.8-2.pgdg12+1
 # pg_cron requires the extension binary in the runtime, not only the builder.
 RUN apt-get update && apt-get install -y --no-install-recommends "postgresql-18-cron${CRON_PACKAGE_VERSION:+=$CRON_PACKAGE_VERSION}" \
     && rm -rf /var/lib/apt/lists/*

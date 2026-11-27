@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('All','Relational','Search','Transport','Graph','Notifications','Pressure','Recovery')][string]$Stage = 'All')
+param([ValidateSet('All','Relational','Search','Transport','Graph','Notifications','Pressure','Recovery','Maintenance')][string]$Stage = 'All')
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -16,6 +16,36 @@ try {
     @("APP_POSTGRES_USER=fixture_admin","APP_POSTGRES_PASSWORD=$secret","APP_POSTGRES_DB=fixture_db","TEMPORAL_POSTGRES_USER=unused","TEMPORAL_POSTGRES_PASSWORD=$secret","TEMPORAL_DEV_VERSION=1.27.2","TEMPORAL_UI_VERSION=2.37.2") | Set-Content -Encoding utf8 $envFile
     & docker compose @compose up -d --build --wait postgres-app
     if ($LASTEXITCODE -ne 0) { throw 'Isolated PostgreSQL startup failed.' }
+    if ($Stage -in @('All','Maintenance')) {
+        & docker compose @compose exec -T postgres-app dpkg-query -W postgresql-18 postgresql-18-cron
+        if ($LASTEXITCODE -ne 0) { throw 'Package evidence query failed.' }
+        foreach ($file in @('07-cron-setup.sql')) {
+            Get-Content -Raw (Join-Path $root "tests/postgres/$file") | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d postgres
+            if ($LASTEXITCODE -ne 0) { throw "Maintenance fixture failed: $file" }
+        }
+        $cronReady = $false
+        for ($i=0; $i -lt 45; $i++) {
+            $count = & docker compose @compose exec -T postgres-app psql -X -At -v ON_ERROR_STOP=1 -U fixture_admin -d postgres -c 'SELECT count(*) FROM public.infra_acceptance_cron_events'
+            if ($LASTEXITCODE -ne 0) { throw 'Cron fixture probe failed.' }
+            if ([int](($count | Out-String).Trim()) -gt 0) { $cronReady = $true; break }
+            Start-Sleep -Seconds 2
+        }
+        if (-not $cronReady) { throw 'Cron worker did not execute fixture.' }
+        foreach ($file in @('08-cron-verify.sql','09-cron-cleanup.sql')) {
+            Get-Content -Raw (Join-Path $root "tests/postgres/$file") | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d postgres
+            if ($LASTEXITCODE -ne 0) { throw "Maintenance fixture failed: $file" }
+        }
+        foreach ($file in @('02-search.sql','05-persistence-setup.sql')) {
+            Get-Content -Raw (Join-Path $root "tests/postgres/$file") | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
+            if ($LASTEXITCODE -ne 0) { throw "Persistence fixture failed: $file" }
+        }
+        & docker compose @compose restart postgres-app
+        if ($LASTEXITCODE -ne 0) { throw 'Clean restart failed.' }
+        & docker compose @compose up -d --wait postgres-app
+        if ($LASTEXITCODE -ne 0) { throw 'Clean restart readiness failed.' }
+        Get-Content -Raw (Join-Path $root 'tests/postgres/06-persistence-verify.sql') | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
+        if ($LASTEXITCODE -ne 0) { throw 'Clean restart verification failed.' }
+    }
     if ($Stage -in @('All','Relational')) {
     foreach ($file in @('10-role-isolation.sql','11-outbox.sql')) {
         Get-Content -Raw (Join-Path $root "tests/postgres/$file") | & docker compose @compose exec -T postgres-app psql -X -v ON_ERROR_STOP=1 -U fixture_admin -d fixture_db
