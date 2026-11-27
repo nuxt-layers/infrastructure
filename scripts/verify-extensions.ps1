@@ -7,7 +7,8 @@ $compose = @('--env-file', (Join-Path $root '.env'), '-f', (Join-Path $root 'com
 $sql = @'
 SELECT CASE
   WHEN current_setting('server_version_num')::integer / 10000 = 18
-   AND (SELECT count(*) FROM pg_extension WHERE extname IN ('age', 'pg_textsearch', 'pgmq')) = 3
+   AND (SELECT count(*) FROM pg_extension WHERE extname IN ('age', 'pg_textsearch', 'pgmq', 'pg_trgm')) = 4
+   AND EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'vector')
    AND position('pg_textsearch' in current_setting('shared_preload_libraries')) > 0
    AND position('pg_cron' in current_setting('shared_preload_libraries')) > 0
    AND NOT ('age' = ANY (regexp_split_to_array(current_setting('shared_preload_libraries'), '\s*,\s*')))

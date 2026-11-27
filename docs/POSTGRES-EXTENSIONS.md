@@ -26,3 +26,7 @@ Only migration/admin roles should create extensions or queues. These examples us
 The PowerShell verification script checks installed extension records and preload settings. It is **not** proof that Cypher traversals, BM25 index concurrency, queue visibility/archiving, pg_cron workers or database recovery work. Those acceptance tests, supported platform architectures, source commit SHA pinning, output image digests, CVE scanning, and dependency/runtime compatibility are required before production release.
 
 This image is still **development-only**. It has not been built or smoke-tested in this assistant session.
+
+## Phase 2 extension additions
+
+`pg_trgm` is enabled with the application extensions. `vector` is built from v0.8.2 source commit but enabled only in a database with an approved vector use case. `pg_textsearch` and PGMQ retain existing release candidates with commit verification; newer releases are not adopted until compatibility is assessed. AGE RC and apt/base tags remain provisional. No production image approval or build result is asserted. See [Phase 2 acceptance](POSTGRES-PHASE-2.md).

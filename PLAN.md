@@ -1,16 +1,18 @@
 # Infrastructure Build Plan
 
-Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture), master reviewed `0cbc06560db54a7460b707012730887b01180a7d`; governing changes in [PR #6](https://github.com/nuxt-layers/architecture/pull/6) pending adoption. Infrastructure is not a software artefact or Nuxt Layer. Zero additional local spend; no Hetzner account or paid activation before explicit owner-approved local MVP acceptance.
+Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture), master reviewed `e9dac240c16891fcbed9669228dac6cd5cde9c3c`; governing PR #6 merged. Infrastructure is not a software artefact or Nuxt Layer. Zero additional local spend; no Hetzner account or paid activation before explicit owner-approved local MVP acceptance.
 
 ## Phase 1 — Requirements and reconciliation
 - [x] Establish [requirements](docs/REQUIREMENTS.md), [93-artefact traceability](docs/ARTEFACT-TRACEABILITY.md), [technology and environment inventory](docs/TECHNOLOGY.md), [acceptance specification](docs/ACCEPTANCE.md).
 - [x] Record approved SeaweedFS, Apache Jena, restic, pgBackRest and Stripe Sandbox choices.
-- [ ] Merge governing PR and this baseline PR; no operational acceptance claimed.
+- [x] Phase 1 PRs #6 (architecture) and #7 (infrastructure) merged; no operational acceptance claimed.
 
 ## Phase 2 — PostgreSQL
 - [x] Existing PostgreSQL 18 application image, AGE/pg_textsearch/PGMQ/pg_cron build/enable definitions, PowerShell start/stop/verify/reset, functional smoke fixtures (PR #3).
-- [ ] Validate exact stable releases, source SHAs/digests, ABI and upgrades; add pg_trgm and conditional pgvector; preserve PostgreSQL-first search.
-- [ ] Provision non-owner scoped roles, migration/diagnostic roles, RLS fixtures, cross-owner/tenant negatives, pool pressure, source-owned outbox relay and LISTEN/NOTIFY wakeups; regenerable cache fixtures only (no global app cache schema).
+- [x] Author pg_trgm enablement, optional pgvector image support and immutable checks for pg_textsearch/PGMQ/pgvector.
+- [ ] Validate exact stable releases, AGE source SHA, base/apt/output digests, ABI and upgrades; no release upgrade assumed.
+- [x] Author per-owner provisioning template and isolated negative RLS/schema/role, search and outbox fixtures; no global app cache schema.
+- [ ] Execute and review fixture results; pool pressure, LISTEN/NOTIFY cross-session, upgrade and crash acceptance remain outstanding.
 - [ ] Execute isolated SQL/restart/crash tests and verify consuming test host connectivity; record evidence. Do not assume historic smoke tests prove isolation.
 
 ## Phase 3 — Temporal

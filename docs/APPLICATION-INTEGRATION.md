@@ -48,3 +48,7 @@ Use `nuxt-layers-test/infrastructure-test` for the Nuxt test UI and its server-s
 ## Production exclusions
 
 Never deploy the test-mode Theme Manager, developer SQL users, loopback Compose overrides or unauthenticated diagnostic endpoints to Coolify. A separately reviewed production composition needs scoped roles, controlled database migrations, TLS, secrets, backups/restore testing and dedicated `temporalio/server` with managed schema upgrades. Hetzner application object storage is **only for application images and files**, not database or infrastructure backups.
+
+## Phase 2 scoped credentials
+
+Use the [per-owner provisioning template](../postgres/provision/owner.sql) with independently supplied secrets. The initial superuser remains operator/bootstrap only. Runtime is a non-owner, NOBYPASSRLS login; migration login owns only its own schema and objects, and diagnostic login has no business table grants. Owners author migrations and RLS; host sets trusted transaction-local tenant context, never client-selected raw SQL. See [Phase 2 acceptance](POSTGRES-PHASE-2.md).

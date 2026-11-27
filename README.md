@@ -2,7 +2,7 @@
 
 Infrastructure deployment and local acceptance support for Nuxt Layers. **This is not a Nuxt capability layer.**
 
-Governed by [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture) (reviewed master `0cbc06560db54a7460b707012730887b01180a7d`; [governing PR #6](https://github.com/nuxt-layers/architecture/pull/6) pending adoption). Infrastructure choices must not leak provider-specific implementations into capability contracts.
+Governed by [nuxt-layers/architecture](https://github.com/nuxt-layers/architecture) (reviewed master `e9dac240c16891fcbed9669228dac6cd5cde9c3c`; [governing PR #6](https://github.com/nuxt-layers/architecture/pull/6) merged). Infrastructure choices must not leak provider-specific implementations into capability contracts.
 
 ## Current implementation status
 
