@@ -1,5 +1,11 @@
 [CmdletBinding()]
-param()
+param([Parameter(Mandatory)][string]$ApplicationPath)
+$application = (Resolve-Path -LiteralPath $ApplicationPath -ErrorAction Stop).Path
+if (-not (Test-Path (Join-Path $application 'package.json'))) { throw 'Application package.json not found.' }
+$package = Get-Content -Raw (Join-Path $application 'package.json') | ConvertFrom-Json
+if ($package.name -ne 'infrastructure-test') { throw 'Expected infrastructure-test application.' }
+if (-not (Test-Path (Join-Path $application 'node_modules'))) { throw 'Install application dependencies first.' }
+if (Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue) { throw 'Stop the existing application on port 3000 before launching the fixture.' }
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -41,11 +47,35 @@ RESET ROLE;
     $address = (& docker compose @compose port postgres-app 5432 | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or $address -notmatch '^127\.0\.0\.1:(\d+)$') { throw 'Fixture port is not loopback.' }
     $port = $Matches[1]
-    Write-Host 'Copy these synthetic session-only assignments to the test application terminal. Do not commit or paste them into chat.'
-    Write-Host ('$env:NUXT_INFRA_TEST_ENABLED = "true"')
-    Write-Host ('$env:NUXT_INFRA_TEST_DATABASE_URL = "postgresql://nl_host_diagnostic:' + $password + '@127.0.0.1:' + $port + '/fixture_db"')
-    Write-Host ('$env:NUXT_INFRA_TEST_TEMPORAL_ADDRESS = ""')
-    Read-Host 'Press Enter after host acceptance to destroy disposable fixture' | Out-Null
+    # Pass credentials only to the child process via inherited environment.
+    # Preserve caller settings and never write the URL to disk or console.
+    $settings = @{
+        NUXT_INFRA_TEST_ENABLED = 'true'
+        NUXT_INFRA_TEST_DATABASE_URL = "postgresql://nl_host_diagnostic:${password}@127.0.0.1:${port}/fixture_db"
+        NUXT_INFRA_TEST_TEMPORAL_ADDRESS = ''
+    }
+    $previous = @{}
+    foreach ($key in $settings.Keys) {
+        $previous[$key] = [Environment]::GetEnvironmentVariable($key, 'Process')
+    }
+    try {
+        foreach ($key in $settings.Keys) {
+            [Environment]::SetEnvironmentVariable($key, $settings[$key], 'Process')
+        }
+        Push-Location -LiteralPath $application
+        try {
+            Write-Host 'Open http://127.0.0.1:3000/admin/infrastructure and select Check connections.'
+            Write-Host 'The database remains running while Nuxt runs. Quit Nuxt to clean up.'
+            & corepack pnpm dev --host 127.0.0.1 --port 3000
+            if ($LASTEXITCODE -ne 0) { throw 'Nuxt exited unsuccessfully.' }
+        } finally {
+            Pop-Location
+        }
+    } finally {
+        foreach ($key in $previous.Keys) {
+            [Environment]::SetEnvironmentVariable($key, $previous[$key], 'Process')
+        }
+    }
 } finally {
     if ((Test-Path $envFile) -and (Test-Path $override)) {
         & docker compose @compose down --volumes --remove-orphans
