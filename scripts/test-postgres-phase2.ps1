@@ -75,7 +75,7 @@ try {
     $holder = Start-Job -ArgumentList $composeJson,$runtimeSecret -ScriptBlock {
         param($json,$password)
         $argsForCompose = @(ConvertFrom-Json $json)
-        @('SELECT pg_advisory_lock(827362);','SELECT pg_sleep(8);') | & docker compose @argsForCompose exec -T -e "PGPASSWORD=$password" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U nl_accept_runtime -d fixture_db
+        @('SELECT pg_advisory_lock(827362);','SELECT pg_sleep(30);') | & docker compose @argsForCompose exec -T -e "PGPASSWORD=$password" postgres-app psql -X -h 127.0.0.1 -v ON_ERROR_STOP=1 -U nl_accept_runtime -d fixture_db
         if ($LASTEXITCODE -ne 0) { throw 'Connection holder failed.' }
     }
     try {
@@ -102,20 +102,7 @@ try {
     $containerId = & docker compose @compose ps -q postgres-app
     if ($LASTEXITCODE -ne 0 -or -not $containerId) { throw 'Cannot identify crash fixture container.' }
     $actualProject = & docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' $containerId
-    if ($LASTEXITCODE -ne 0 -or $actualProject -ne $project -or $project -notmatch '^nl-pg2-[0-9a-f]{12}
-    # SIGKILL only the uniquely named ephemeral project, never shared volumes.
-    & docker compose @compose kill -s SIGKILL postgres-app
-    if ($LASTEXITCODE -ne 0) { throw 'Crash injection failed.' }
-    & docker compose @compose up -d --wait postgres-app
-    if ($LASTEXITCODE -ne 0) { throw 'Crash recovery startup failed.' }
-    Invoke-Fixture '14-crash-verify.sql'
-    Write-Host 'PASS: isolated Phase 2 authored SQL, login, notify and crash fixtures (not full Phase 2 acceptance).'
-} finally {
-    & docker compose @compose down --volumes --remove-orphans
-    if ($LASTEXITCODE -ne 0) { Write-Warning "Cleanup failed for isolated project $project; inspect before removing." }
-    Remove-Item $envFile -Force -ErrorAction SilentlyContinue
-}
-) { throw 'Refusing crash outside isolated fixture.' }
+    if ($LASTEXITCODE -ne 0 -or $actualProject -ne $project -or $project -notmatch '^nl-pg2-[0-9a-f]{12}$') { throw 'Refusing crash outside isolated fixture.' }
     # SIGKILL only the uniquely named ephemeral project, never shared volumes.
     & docker compose @compose kill -s SIGKILL postgres-app
     if ($LASTEXITCODE -ne 0) { throw 'Crash injection failed.' }
