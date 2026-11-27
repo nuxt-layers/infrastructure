@@ -20,7 +20,8 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [x] Author consuming host restricted diagnostics/client pool in infrastructure-test PR #2.
 - [x] Owner executed all seven Phase 2 harness stages across local runs; restricted graph, notification, role pressure, committed outbox and abrupt crash passed. See docs/POSTGRES-PHASE-2.md.
 - [x] Owner ran all eight stages together on exact cron-pinned build (1396af5), including functional cron and clean restart; all passed.
-- [ ] Consuming host, inference resistance and upgrade remain separate gates.
+- [x] Consuming Nuxt host acceptance passed on 27 November 2026: restricted login, private data denial and bounded client-pool recovery; automated launcher b5269ea.
+- [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
 - [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).
