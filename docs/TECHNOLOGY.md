@@ -26,6 +26,8 @@ Zero additional local spend. Exact versions, licensing for selected builds, tran
 
 ## Cryptography
 
+Canonical candidate applicability and upstream source snapshots are maintained in the [governing Infrastructure specification](https://github.com/nuxt-layers/architecture/blob/master/docs/infrastructure/infrastructure/infrastructure-record.md#cryptographic-technology-and-implementation-candidates) and [architecture resource register](https://github.com/nuxt-layers/architecture/blob/master/RESOURCES.md#node-crypto), pending adoption of [architecture PR #6](https://github.com/nuxt-layers/architecture/pull/6). Infrastructure records environment-level versions, supported TLS/protocol combinations, key custody facilities and operational evidence; actual application package dependencies and lockfiles belong to consuming artefacts. No universal crypto dependency is mandated.
+
 Apply governing ADR-0020 upon adoption. Prefer Node crypto, Web Crypto and OpenSSL/maintained protocol stacks; use ML-KEM, ML-DSA, SLH-DSA and standard hybrid protocols when interoperable, reviewed AEAD (AES-256-GCM, ChaCha20-Poly1305 as appropriate), SHA-2/SHA-3 and OS-backed CSPRNG. No custom handshakes, OTP platform cipher or P=NP-proof claims. Assess @noble/post-quantum, @noble/ciphers, @noble/hashes, @noble/curves only for native gaps; shamir-secret-sharing for reviewed independent threshold custody; @quxtech/pqc-crypto, @digital-defiance/secrets-ts, liboqs as conditional alternatives; HSM/PKCS#11 future risk-based option only. Audit exact dependencies and side-channel assumptions; no hardware purchase. Node crypto support does not establish TLS negotiation support across proxies/providers.
 
 ## Local / production equivalence

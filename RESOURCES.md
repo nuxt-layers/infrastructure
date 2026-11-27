@@ -47,6 +47,7 @@
 - [pgBackRest](https://pgbackrest.org/)
 - [Coolify](https://coolify.io/docs/)
 - [Stripe testing](https://docs.stripe.com/testing), [sandboxes](https://docs.stripe.com/sandboxes), [CLI](https://docs.stripe.com/stripe-cli), [Node SDK](https://github.com/stripe/stripe-node)
-- [NIST PQC](https://csrc.nist.gov/projects/post-quantum-cryptography), [Node crypto](https://nodejs.org/api/crypto.html), [noble post-quantum](https://github.com/paulmillr/noble-post-quantum), [shamir-secret-sharing](https://www.npmjs.com/package/shamir-secret-sharing)
+- [NIST PQC](https://csrc.nist.gov/projects/post-quantum-cryptography), [Node crypto API documentation](https://nodejs.org/api/crypto.html), [OpenSSL documentation](https://docs.openssl.org/), [W3C Web Crypto API](https://www.w3.org/TR/WebCryptoAPI/)
+- [Canonical cryptographic candidate applicability](https://github.com/nuxt-layers/architecture/blob/master/docs/infrastructure/infrastructure/infrastructure-record.md#cryptographic-technology-and-implementation-candidates) and [pinned upstream resource references](https://github.com/nuxt-layers/architecture/blob/master/RESOURCES.md#node-crypto) (pending architecture PR #6). Do not maintain competing source snapshots here; record actual deployed versions and operational documentation during implementation.
 
 Exact selected versions, licences, transitive dependencies and provider access remain implementation acceptance matters.
