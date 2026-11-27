@@ -37,3 +37,7 @@ Owner-provided Windows Docker Desktop output for the e56501a candidate: image bu
 ## Second local execution
 
 Owner-provided output for 6f0cda8: pinned base build/cache reuse and all preceding fixtures passed again. AGE progressed to missing EXECUTE on agtype_access_operator; fixed query uses p.name, which AGE implements through the variadic agtype[] accessor (verified in pinned sql/agtype_access.sql). Grant only this function to the dedicated non-login graph role; no runtime or PUBLIC grant. Remaining fixtures not reached; cleanup succeeded. Output manifest list sha256:c0b2e56f2f85302f88dd1292392a292cbafb095bbfbf2fa7bfe593fff2fcedac. Rerun required; no assertion that this exhausts all AGE internal privileges.
+
+## Third local execution and targeted reruns
+
+Owner-provided output for af353fb: all preceding fixtures passed again. Restricted AGE returned the correct unquoted text allowed-a; the assertion incorrectly expected embedded quotation marks. Corrected the expected text; negative graph access assertion was not reached in that run. Use `./scripts/test-postgres-phase2.ps1 -Stage Graph` for the graph fixture and its login prerequisites, or `-Stage Notifications`, `-Stage Pressure`, `-Stage Recovery`, `-Stage Relational`, `-Stage Search`, `-Stage Transport`. Default `All` still runs the complete harness. Every invocation creates and cleans its own disposable project. A selected-stage pass is not a complete acceptance pass.
