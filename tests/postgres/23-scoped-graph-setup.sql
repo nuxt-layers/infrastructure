@@ -13,7 +13,8 @@ REVOKE ALL ON SCHEMA infra_scoped_graph FROM PUBLIC;
 GRANT USAGE ON SCHEMA ag_catalog,infra_graph_a TO nl_fixture_graph;
 GRANT SELECT ON ALL TABLES IN SCHEMA ag_catalog,infra_graph_a TO nl_fixture_graph;
 GRANT EXECUTE ON FUNCTION ag_catalog.cypher(name,cstring,ag_catalog.agtype),
-    ag_catalog.agtype_to_text(ag_catalog.agtype) TO nl_fixture_graph;
+    ag_catalog.agtype_to_text(ag_catalog.agtype),
+    ag_catalog.agtype_access_operator(ag_catalog.agtype[]) TO nl_fixture_graph;
 -- Administrator sets a database-scoped session preload only for this fixture login.
 -- No global preload and no superuser or arbitrary LOAD rights for runtime.
 ALTER ROLE nl_accept_runtime IN DATABASE fixture_db SET session_preload_libraries = 'age';
