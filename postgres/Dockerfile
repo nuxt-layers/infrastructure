@@ -1,6 +1,6 @@
 # Development image only until build, extension, upgrade and restore acceptance passes.
 # The build stage and runtime use the same PostgreSQL major release and Debian variant.
-ARG POSTGRES_BASE=postgres:18-bookworm
+ARG POSTGRES_BASE=postgres:18-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35
 FROM ${POSTGRES_BASE} AS extensions
 ARG AGE_REF=PG18/v1.8.0-rc0
 ARG AGE_SHA=e43dc1a12b78fba4acef9835b2b10379b8d243b4

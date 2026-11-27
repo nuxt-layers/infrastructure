@@ -6,7 +6,7 @@ services:
       context: ../postgres
       dockerfile: Dockerfile
       args:
-        POSTGRES_BASE: ${POSTGRES_BASE:-postgres:18-bookworm}
+        POSTGRES_BASE: ${POSTGRES_BASE:-postgres:18-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35}
         CRON_PACKAGE_VERSION: ${CRON_PACKAGE_VERSION:-}
     image: nuxt-layers/postgres-extended:pg18-dev
     command:

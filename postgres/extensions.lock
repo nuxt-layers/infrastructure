@@ -1,7 +1,7 @@
 # PostgreSQL extension inputs — source tags selected 2026-11-10.
 # All source refs should additionally be resolved to immutable commit SHAs / artefact checksums
 # and images published by digest before deployment to production.
-postgres_base=postgres:18-bookworm
+postgres_base=postgres:18-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35
 apache_age_repository=https://github.com/apache/age
 apache_age_ref=PG18/v1.8.0-rc0
 apache_age_sha=e43dc1a12b78fba4acef9835b2b10379b8d243b4
