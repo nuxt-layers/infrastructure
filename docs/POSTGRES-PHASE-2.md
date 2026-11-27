@@ -59,3 +59,7 @@ Run `./scripts/start-postgres-host-fixture.ps1 -ApplicationPath <local infrastru
 ## Consuming host acceptance — 27 November 2026
 
 Owner screenshot at 20:38:52.081 UTC confirms PostgreSQL passed with restricted-role, private data denial and bounded pool recovery succeeded; Temporal not-configured as intended. Automated launcher b5269ea and companion infrastructure-test diagnostic implementation ae1d44d are the candidate baseline. Earlier owner terminal output confirms Nuxt typecheck passed. Final launcher cleanup after quitting, application lockfile/CI, complete build provenance, inference resistance and controlled upgrade remain unverified. No production acceptance claimed.
+
+## Repository reconciliation
+
+Companion lockfile inspected in full: pnpm 12 multi-document YAML includes application importer, pg 8.16.3 and Temporal client 1.24.0. Earlier missing-lockfile assertion was incorrect. Frozen install/build and protected-branch checks remain to be verified. Companion PR #3 changes only node-forge lock entries from 1.4.2 to 1.4.4; validate separately. No extension upgrade target has been selected; preserve the tested local baseline. Full apt provenance, production inference resistance and operational upgrade/restore are release gates, not evidence of failed local functionality. Backup/restore qualification belongs to Phase 5; do not waive it.

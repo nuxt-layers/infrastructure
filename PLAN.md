@@ -13,7 +13,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [x] Author configurable digest-qualified base/exact cron package inputs, runtime build evidence and controlled upgrade procedure.
 - [x] Record tested base digest, direct source commits and observed PostgreSQL/pg_cron package versions; pin cron package.
 - [x] Rebuild with exact cron pin and verify runtime package versions.
-- [ ] Verify complete apt/build provenance and execute approved upgrade path when selected; no release upgrade assumed.
+- [ ] Verify complete apt/build provenance and execute approved upgrade path when selected; no release upgrade assumed. Retain tested local baseline; production activation remains blocked.
 - [x] Author per-owner provisioning template and isolated negative RLS/schema/role, search and outbox fixtures; no global app cache schema.
 - [x] Author real TCP login, denied unscoped extension access, committed outbox retry/deduplication, cross-session LISTEN/NOTIFY and isolated abrupt crash fixtures.
 - [x] Author scoped extension candidate fixtures and role connection-limit refusal/recovery.

@@ -22,7 +22,7 @@ This emits redacted runtime evidence, including image ID, local base tag digests
 
 ## Consuming host
 
-Companion [infrastructure-test PR #2](https://github.com/nuxt-layers-test/infrastructure-test/pull/2) introduces restricted-role and bounded client-pool checks. Provision diagnostic role separately using owner template, activate login securely, set server-only URL and run on loopback. The existing application lockfile lacks dependency graph; regenerate and review locally before frozen-lockfile validation. No tests/builds executed here.
+Companion [infrastructure-test PR #2](https://github.com/nuxt-layers-test/infrastructure-test/pull/2) introduces restricted-role and bounded client-pool checks. Provision diagnostic role separately using owner template, activate login securely, set server-only URL and run on loopback. The pnpm 12 multi-document application lockfile contains its dependency graph; use frozen-lockfile validation without unnecessary regeneration. No tests/builds executed here.
 
 ## Outstanding
 
