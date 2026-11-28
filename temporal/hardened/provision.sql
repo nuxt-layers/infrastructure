@@ -1,0 +1,25 @@
+\set ON_ERROR_STOP on
+\getenv migration H1_MIGRATION
+\getenv execution H1_EXECUTION
+\getenv visibility H1_VISIBILITY
+CREATE ROLE temporal_migration LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD :'migration';
+CREATE ROLE temporal_execution LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD :'execution';
+CREATE ROLE temporal_visibility_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD :'visibility';
+CREATE DATABASE temporal OWNER temporal_migration;
+CREATE DATABASE temporal_visibility OWNER temporal_migration;
+REVOKE ALL ON DATABASE postgres FROM PUBLIC;
+REVOKE ALL ON DATABASE template1 FROM PUBLIC;
+REVOKE ALL ON DATABASE temporal FROM PUBLIC;
+REVOKE ALL ON DATABASE temporal_visibility FROM PUBLIC;
+GRANT CONNECT ON DATABASE temporal TO temporal_execution;
+GRANT CONNECT ON DATABASE temporal_visibility TO temporal_visibility_runtime;
+\connect temporal
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO temporal_execution;
+ALTER DEFAULT PRIVILEGES FOR ROLE temporal_migration IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO temporal_execution;
+ALTER DEFAULT PRIVILEGES FOR ROLE temporal_migration IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO temporal_execution;
+\connect temporal_visibility
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO temporal_visibility_runtime;
+ALTER DEFAULT PRIVILEGES FOR ROLE temporal_migration IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO temporal_visibility_runtime;
+ALTER DEFAULT PRIVILEGES FOR ROLE temporal_migration IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO temporal_visibility_runtime;

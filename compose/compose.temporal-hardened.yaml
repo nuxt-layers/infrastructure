@@ -1,0 +1,68 @@
+# Isolated H1 fixture; the pinned image supplies the tools, not auto-setup.
+services:
+  postgres-temporal:
+    image: postgres:18-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35
+    environment:
+      POSTGRES_USER: temporal_bootstrap
+      POSTGRES_PASSWORD: ${H1_BOOTSTRAP:?Required}
+      H1_MIGRATION: ${H1_MIGRATION:?Required}
+      H1_EXECUTION: ${H1_EXECUTION:?Required}
+      H1_VISIBILITY: ${H1_VISIBILITY:?Required}
+    volumes:
+      - temporal_data:/var/lib/postgresql
+      - ../temporal/hardened/provision.sql:/docker-entrypoint-initdb.d/10-provision.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U temporal_bootstrap -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    networks: [persistence]
+  migrate:
+    image: temporalio/auto-setup:1.27.2@sha256:b44cbfeb43dbeae42db113b44fb8414c3452f05643b3d6b1592f955277d73526
+    profiles: [migration]
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        for target in temporal temporal_visibility; do
+          dir=temporal
+          if [ "$$target" = temporal_visibility ]; then dir=visibility; fi
+          temporal-sql-tool --plugin postgres12 --ep postgres-temporal -p 5432 -u temporal_migration --db "$$target" setup-schema -v 0.0
+          temporal-sql-tool --plugin postgres12 --ep postgres-temporal -p 5432 -u temporal_migration --db "$$target" update-schema -d /etc/temporal/schema/postgresql/v12/$$dir/versioned
+        done
+    environment:
+      SQL_PASSWORD: ${H1_MIGRATION:?Required}
+    networks: [persistence]
+  temporal:
+    image: temporalio/auto-setup:1.27.2@sha256:b44cbfeb43dbeae42db113b44fb8414c3452f05643b3d6b1592f955277d73526
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        export BIND_ON_IP=0.0.0.0
+        export TEMPORAL_BROADCAST_ADDRESS=$$(getent hosts "$$(hostname)" | awk 'NR==1 {print $$1}')
+        test -n "$$TEMPORAL_BROADCAST_ADDRESS"
+        dockerize -template /etc/temporal/config/config_template.yaml:/etc/temporal/config/docker.yaml
+        exec temporal-server --env docker start
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_SEEDS: postgres-temporal
+      POSTGRES_USER: temporal_execution
+      POSTGRES_PWD: ${H1_EXECUTION:?Required}
+      VISIBILITY_POSTGRES_USER: temporal_visibility_runtime
+      VISIBILITY_POSTGRES_PWD: ${H1_VISIBILITY:?Required}
+      DBNAME: temporal
+      VISIBILITY_DBNAME: temporal_visibility
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/development-sql.yaml
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CLI_ADDRESS: temporal:7233
+    volumes:
+      - ../temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+    ports:
+      - "127.0.0.1::7233"
+    networks: [persistence, frontend]
+networks:
+  persistence:
+    internal: true
+  frontend: {}
+volumes:
+  temporal_data: {}

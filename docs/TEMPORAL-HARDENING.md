@@ -1,0 +1,15 @@
+# Temporal hardening — H1 persistence
+
+Run from infrastructure: `./scripts/test-temporal-h1.ps1`. Independent disposable Compose project, pinned images from accepted baseline, no application DB, no Nuxt host or paid services. H1 is a fresh installation fixture, not an upgrade of existing data.
+
+The pinned auto-setup image is used as a binary and schema carrier only. Both migration and server override its entrypoint, never invoking auto-setup. Explicit operator provisioning creates two databases, a non-superuser migration owner and two independent runtime identities. Native temporal-sql-tool initialises version 0.0 and applies versioned migrations to each database. PostgreSQL default grants apply DML to migration-created tables; runtime schema metadata writes are revoked after migration. Migration login is disabled before the server starts. Explicit SDK namespace bootstrap follows server readiness; real workflow execution and SQL visibility verify runtime functionality. Runtime identities are tested via TCP for exact versions (1.16 and 1.9), lack of elevated role flags, denied DDL, denied schema metadata updates, denied SET ROLE and denied cross-database connections.
+
+Source review: Temporal v1.27.2 docker/config_template.yaml, schema/postgresql/v12 versioned tree; docker-builds main entrypoint/start/auto-setup and server Dockerfile inspected for image layout and invocation. Actual pinned image execution is the acceptance gate. The existing development fixture is unchanged.
+
+## Operational limits
+
+H1 is not production activation. Synthetic credentials are generated per run, temporarily stored in an env file and container configuration, removed on teardown; production secret delivery and PostgreSQL transport TLS remain outstanding. Only the database container and one-shot migration job receive migration credentials; server receives runtime credentials only. The PostgreSQL bootstrap account remains operator-only. No application capability receives Temporal database credentials. Runtime roles retain DML on internal tables other than schema version/history; this is a dedicated technical service account, not tenant access.
+
+Fresh schema setup is deliberately non-idempotent and uses an empty disposable volume. A future controlled upgrade must stop runtime, back up both stores, verify exact target release compatibility, temporarily enable migration login with rotated secret, apply versioned update only, reconcile grants and metadata protections, disable login, verify schemas and exercise recovery before release. No target upgrade selected; no upgrade or rollback acceptance claimed. Restore-based rollback belongs to Phase 5.
+
+H2: internode and frontend mTLS, independent signed JWT claims and namespace negative access tests; default authoriser does not enforce task queue-level policy. H3: terminate actual worker process during executing activity, recover durable checkpoint with bounded retry. Gateway contract, consuming host integration, final qualification remain outstanding. No assistant test/build execution.

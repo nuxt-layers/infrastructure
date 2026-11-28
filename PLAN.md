@@ -24,6 +24,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
+- [x] Author separate H1 explicit schema migration and restricted persistence runtime fixture, including negative privilege tests; owner acceptance pending (docs/TEMPORAL-HARDENING.md).
 - [x] Owner Functional package passed 28 November 2026 at 0cadd87: automatic single scheduled dispatch, heartbeat checkpoint recovery, SQL visibility, namespace/queue routing, abrupt server and database termination, replay and cleanup.
 - [x] Author standalone disposable acceptance stack and selectable startup/execution/recovery harness; see docs/TEMPORAL-PHASE-3.md. Owner Startup passed 27 November 2026; execution and visibility schema versions recorded.
 - [x] Pin verified disposable Temporal image digest; owner Recovery passed on 28 November 2026 at 504fe23: bounded retry, graceful worker drain, ordered restart, changed loopback port rediscovery, history retrieval and suspended workflow resumption without repeat activity.
