@@ -6,7 +6,7 @@ services:
     command:
       - |
         cp /seed/routes.yaml /dynamic/routes.yaml
-        exec traefik --entrypoints.websecure.address=:8443 --entrypoints.websecure.forwardedheaders.insecure=false --entrypoints.websecure.aliasheadersstrategy=delete --providers.file.directory=/dynamic --providers.file.watch=true --log.level=INFO --api=false --global.checknewversion=false --global.sendanonymoususage=false
+        exec traefik --entrypoints.websecure.address=:8443 --entrypoints.websecure.forwardedheaders.insecure=false --entrypoints.websecure.http.aliasheadersstrategy=delete --providers.file.directory=/dynamic --providers.file.watch=true --log.level=INFO --api=false --global.checknewversion=false --global.sendanonymoususage=false
     tmpfs:
       - /dynamic:size=1m,mode=0700
     volumes:
