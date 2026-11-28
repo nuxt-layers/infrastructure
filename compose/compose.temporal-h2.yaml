@@ -1,0 +1,44 @@
+# H2 extends H1; no changes to the accepted H1 fixture.
+services:
+  jwks:
+    image: nginx:stable-alpine@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    volumes:
+      - "${H2_PUBLIC_DIR:?Required}:/usr/share/nginx/html:ro"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:80/jwks.json"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+    networks: [security]
+  temporal:
+    command:
+      - |
+        export BIND_ON_IP=0.0.0.0
+        export TEMPORAL_BROADCAST_ADDRESS=$$(getent hosts "$$(hostname)" | awk 'NR==1 {print $$1}')
+        test -n "$$TEMPORAL_BROADCAST_ADDRESS"
+        curl -fsS --max-time 5 http://jwks:80/jwks.json >/dev/null
+        dockerize -template /etc/temporal/config/config_template.yaml:/etc/temporal/config/docker.yaml
+        exec temporal-server --env docker start --service frontend --service internal-frontend --service history --service matching --service worker
+    environment:
+      USE_INTERNAL_FRONTEND: "true"
+      TEMPORAL_TLS_REQUIRE_CLIENT_AUTH: "true"
+      TEMPORAL_TLS_SERVER_CERT: /h2/internode.crt
+      TEMPORAL_TLS_SERVER_KEY: /h2/internode.key
+      TEMPORAL_TLS_SERVER_CA_CERT: /h2/ca.crt
+      TEMPORAL_TLS_INTERNODE_SERVER_NAME: temporal
+      TEMPORAL_TLS_FRONTEND_CERT: /h2/frontend.crt
+      TEMPORAL_TLS_FRONTEND_KEY: /h2/frontend.key
+      TEMPORAL_TLS_CLIENT1_CA_CERT: /h2/ca.crt
+      TEMPORAL_TLS_CLIENT2_CA_CERT: /h2/ca.crt
+      TEMPORAL_TLS_FRONTEND_SERVER_NAME: temporal
+      TEMPORAL_AUTH_AUTHORIZER: default
+      TEMPORAL_AUTH_CLAIM_MAPPER: default
+      TEMPORAL_JWT_KEY_SOURCE1: http://jwks:80/jwks.json
+      TEMPORAL_JWT_KEY_REFRESH: 5s
+    volumes:
+      - "${H2_SERVER_DIR:?Required}:/h2:ro"
+    networks: [persistence, frontend, security]
+networks:
+  security:
+    internal: true

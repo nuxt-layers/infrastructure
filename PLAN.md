@@ -24,9 +24,16 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
+- [x] Owner full Phase 3 SDK regression (`-Stage All`) passed 28 November 2026 at 2ece4a9, including both restart paths, separate workflow IDs, persisted results and cleanup. H1/H2 independently passed in the preceding combined run at 77f4262.
+- [x] Owner H2 passed 28 November 2026 at 1acdc14: trusted mTLS, plaintext and invalid certificate rejection, missing/invalid/expired JWT denial, scoped read/write denial, authenticated worker execution, historical retrieval and cleanup.
+- [x] Owner H3 WorkerCrash passed 28 November 2026 at 67e005a: durable attempt-one checkpoint, forced active worker termination, replacement attempt-two recovery, exactly one completed activity, graceful drain and cleanup.
+- [x] Owner H1 persistence hardening passed 28 November 2026 at 62fb18f: explicit fresh schema migrations, independent runtime TCP logins, denied DDL/metadata writes/SET ROLE/cross-database connections, disabled migration login, explicit namespace bootstrap, real workflow/visibility and cleanup (docs/TEMPORAL-HARDENING.md).
+- [x] Owner Functional package passed 28 November 2026 at 0cadd87: automatic single scheduled dispatch, heartbeat checkpoint recovery, SQL visibility, namespace/queue routing, abrupt server and database termination, replay and cleanup.
+- [x] Author standalone disposable acceptance stack and selectable startup/execution/recovery harness; see docs/TEMPORAL-PHASE-3.md. Owner Startup passed 27 November 2026; execution and visibility schema versions recorded.
+- [x] Pin verified disposable Temporal image digest; owner Recovery passed on 28 November 2026 at 504fe23: bounded retry, graceful worker drain, ordered restart, changed loopback port rediscovery, history retrieval and suspended workflow resumption without repeat activity.
 - [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).
 - [ ] Confirm current supported server/PG18 compatibility, pin immutable images; controlled server/schema migration jobs, advanced visibility, private network, TLS, scoped namespaces/queues, graceful worker lifecycle.
-- [ ] Verify startup, real worker/history, restart, upgrade and recovery, published temporal-gateway contract. Never reuse PG16 volume unmodified.
+- [ ] Verify controlled upgrade and published temporal-gateway contract; active worker-process crash, clean restart, abrupt server/database crash, heartbeat and worker/history acceptance passed. Never reuse PG16 volume unmodified.
 
 ## Phase 4 — Hosting environment
 - [ ] Provision production-representative local Linux VM using existing equipment, Coolify/Traefik, private networking, host security, resource budgets, secrets, UTC/NTP/NTS and qualified status.

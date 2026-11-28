@@ -1,0 +1,42 @@
+# Standalone disposable Phase 3 stack; never mounts the application database.
+services:
+  postgres-temporal:
+    image: postgres:18-bookworm@sha256:e742a2668255221388004f3a42b6150a2103f5054ab3a4a93ae9e4f01e551c35
+    environment:
+      POSTGRES_USER: temporal_fixture
+      POSTGRES_PASSWORD: ${TEMPORAL_FIXTURE_PASSWORD:?Required synthetic password}
+    volumes:
+      - temporal_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U temporal_fixture -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [persistence]
+  temporal:
+    image: temporalio/auto-setup:1.27.2@sha256:b44cbfeb43dbeae42db113b44fb8414c3452f05643b3d6b1592f955277d73526
+    depends_on:
+      postgres-temporal:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: temporal_fixture
+      POSTGRES_PWD: ${TEMPORAL_FIXTURE_PASSWORD:?Required synthetic password}
+      POSTGRES_SEEDS: postgres-temporal
+      DBNAME: temporal
+      VISIBILITY_DBNAME: temporal_visibility
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CLI_ADDRESS: temporal:7233
+    volumes:
+      - ../temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+    ports:
+      - "127.0.0.1::7233"
+    networks: [persistence, frontend]
+networks:
+  persistence:
+    internal: true
+  frontend: {}
+volumes:
+  temporal_data: {}
