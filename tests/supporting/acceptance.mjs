@@ -1,11 +1,11 @@
 import { createHash, createHmac } from 'node:crypto';
 import { createConnection } from 'node:net';
 import assert from 'node:assert/strict';
-const [s3, mail, smtp, access, secret] = process.argv.slice(2);
+const [s3, mail, smtp, access, secret, tenantAccess, tenantSecret, mode] = process.argv.slice(2);
 for (const address of [s3,mail,smtp]) assert.match(address, /^127\.0\.0\.1:\d+$/);
 const hash = data => createHash('sha256').update(data).digest('hex');
 const hmac = (key,data) => createHmac('sha256',key).update(data).digest();
-async function request(method,path,body='',key=secret) {
+async function request(method,path,body='',key=secret, identity=access) {
   const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g,'');
   const day = date.slice(0,8);
   const payload = hash(body);
@@ -14,7 +14,7 @@ async function request(method,path,body='',key=secret) {
   const canonical = [method,path,'',Object.keys(headers).sort().map(k=>k+':'+headers[k]+'\n').join(''),signed,payload].join('\n');
   const scope = day+'/us-east-1/s3/aws4_request';
   const signing = hmac(hmac(hmac(hmac('AWS4'+key,day),'us-east-1'),'s3'),'aws4_request');
-  headers.authorization = 'AWS4-HMAC-SHA256 Credential='+access+'/'+scope+', SignedHeaders='+signed+', Signature='+hmac(signing,['AWS4-HMAC-SHA256',date,scope,hash(canonical)].join('\n')).toString('hex');
+  headers.authorization = 'AWS4-HMAC-SHA256 Credential='+identity+'/'+scope+', SignedHeaders='+signed+', Signature='+hmac(signing,['AWS4-HMAC-SHA256',date,scope,hash(canonical)].join('\n')).toString('hex');
   return fetch('http://'+s3+path,{method,headers,...(method==='PUT'?{body}:{}),signal:AbortSignal.timeout(5000)});
 }
 async function ready(fn) {
@@ -24,6 +24,16 @@ async function ready(fn) {
 await ready(async()=> (await request('GET','/')).ok);
 await ready(async()=> (await fetch('http://'+mail+'/api/v1/messages',{signal:AbortSignal.timeout(3000)})).ok);
 const bucket='/infra-fixture';
+const restricted=(method,path,body='')=>request(method,path,body,tenantSecret,tenantAccess);
+if(mode==='--after-restart') {
+  const response=await request('GET',bucket+'/persist.txt');
+  assert.equal(response.status,200);
+  assert.equal(await response.text(),'restart checkpoint');
+  assert.equal((await request('DELETE',bucket+'/persist.txt')).ok,true);
+  assert.equal((await request('DELETE',bucket)).ok,true);
+  console.log('PASS: S3 persistence across service restart');
+  process.exit(0);
+}
 assert.equal((await request('PUT',bucket)).ok,true);
 const path=bucket+'/probe.txt', payload='synthetic infrastructure fixture';
 assert.equal((await request('PUT',path,payload)).ok,true);
@@ -34,7 +44,19 @@ assert.equal((await fetch('http://'+s3+path,{signal:AbortSignal.timeout(5000)}))
 assert.equal((await request('GET',bucket)).ok,true);
 assert.equal((await request('DELETE',path)).ok,true);
 assert.equal((await request('GET',path)).status,404);
-assert.equal((await request('DELETE',bucket)).ok,true);
+assert.equal((await request('PUT','/infra-other')).ok,true);
+assert.equal((await request('PUT','/infra-other/private.txt','private')).ok,true);
+assert.equal((await restricted('PUT',bucket+'/scoped.txt','scoped')).ok,true);
+assert.equal(await (await restricted('GET',bucket+'/scoped.txt')).text(),'scoped');
+for(const [method,path] of [['GET','/infra-other/private.txt'],['GET','/infra-other'],['PUT','/infra-other/denied.txt'],['DELETE','/infra-other/private.txt']]) {
+  assert.equal((await restricted(method,path,'denied')).status,403);
+}
+assert.equal(await (await request('GET','/infra-other/private.txt')).text(),'private');
+assert.equal((await restricted('DELETE',bucket+'/scoped.txt')).ok,true);
+assert.equal((await request('DELETE','/infra-other/private.txt')).ok,true);
+assert.equal((await request('DELETE','/infra-other')).ok,true);
+assert.equal((await request('PUT',bucket+'/persist.txt','restart checkpoint')).ok,true);
+console.log('PASS: scoped bucket access and cross-bucket read/write/list/delete denial');
 console.log('PASS: signed S3 bucket/object lifecycle and invalid/anonymous denial');
 const port=Number(smtp.split(':')[1]);
 const socket=createConnection({host:'127.0.0.1',port});

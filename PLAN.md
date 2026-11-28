@@ -45,7 +45,9 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
 ## Phase 6 — Supporting infrastructure
+- [x] Author SeaweedFS scoped bucket negative tests and restart persistence fixture; owner execution pending.
 - [ ] SeaweedFS single-node local S3, repeatable buckets/credentials and same Storage adapter tests; Hetzner S3 configuration only.
+- [x] Owner reported OIDC, HTTP fault simulation, DNS and local TLS acceptance passed at baseline 9e8be93; exact commands/evidence remain in the fixture references. No Coolify or ACME acceptance implied.
 - [ ] Local DNS/CA/ACME and Site Hosting multi-site route/TLS reconciliation.
 - [ ] SMTP/OIDC/API/fault fixtures, Stripe sandbox and offline simulator; connector implementation coordinated with artefact owners.
 - [ ] Isolated Apache Jena bounded ontology/SHACL, selected processing/conditional collaboration and solver facilities; verify exact builds and licences.
