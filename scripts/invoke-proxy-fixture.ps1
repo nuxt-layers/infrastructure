@@ -18,7 +18,7 @@ function Invoke-Compose {
     & docker compose @compose @args
     if ($LASTEXITCODE -ne 0) { throw 'Proxy fixture command failed.' }
 }
-function Write-Routes([bool]$IncludeA) {
+function Write-Routes([bool]$IncludeA, [switch]$Live) {
     $routers = @{}
     $services = @{}
     $certificates = @()
@@ -31,8 +31,15 @@ function Write-Routes([bool]$IncludeA) {
     }
     $config = @{http=@{routers=$routers;services=$services};tls=@{certificates=$certificates;options=@{default=@{sniStrict=$true;minVersion='VersionTLS12'}}}}
     $temp = Join-Path $dynamic 'routes.tmp'
-    $config | ConvertTo-Json -Depth 15 | Set-Content -Encoding utf8 $temp
-    Move-Item -LiteralPath $temp -Destination (Join-Path $dynamic 'routes.yaml') -Force
+    $json = $config | ConvertTo-Json -Depth 15 -Compress
+    if ($Live) {
+        # Publish within Linux tmpfs so the file watcher receives native rename events.
+        $json | & docker compose @compose exec -T proxy sh -ec 'cat > /dynamic/routes.tmp; mv /dynamic/routes.tmp /dynamic/routes.yaml'
+        if ($LASTEXITCODE -ne 0) { throw 'Live route publication failed.' }
+    } else {
+        $json | Set-Content -Encoding utf8 $temp
+        Move-Item -LiteralPath $temp -Destination (Join-Path $dynamic 'routes.yaml') -Force
+    }
 }
 try {
     New-Item -ItemType Directory -Path $dynamic,$certs | Out-Null
@@ -49,8 +56,8 @@ try {
     $endpoint = (Invoke-Compose port proxy 8443 | Out-String).Trim()
     if ($endpoint -notmatch '^127\.0\.0\.1:\d+$') { throw 'Proxy must be loopback only.' }
     foreach ($phase in @('apply','withdraw','reapply')) {
-        if ($phase -eq 'withdraw') { Write-Routes $false }
-        if ($phase -eq 'reapply') { Write-Routes $true }
+        if ($phase -eq 'withdraw') { Write-Routes $false -Live }
+        if ($phase -eq 'reapply') { Write-Routes $true -Live }
         & node (Join-Path $PSScriptRoot '../tests/site-hosting/proxy-acceptance.mjs') $endpoint $CertificateFolder $phase
         if ($LASTEXITCODE -ne 0) { throw "Proxy acceptance failed: $phase" }
     }

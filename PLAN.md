@@ -42,13 +42,13 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Crypto inventory, approved profiles and negative isolation parity; capacity and no-cost verification.
 
 ## Phase 5 — Recovery
-- [x] Author bounded generic PITR fixture, observed restore duration and encrypted restic wrong-password refusal. Owner execution pending; application/Temporal-specific recovery not yet verified.
+- [x] Author bounded generic PITR fixture, observed restore duration and encrypted restic wrong-password refusal. Owner restic acceptance passed at 872968d (image sha256:c907f4b76cf63e41517573a37b0319ff78b83db524aac3401a1cf54521d8f2a4, integrity, incorrect password refusal, exact restored hash, 1.2492453s observed restore); generic PITR and application/Temporal-specific recovery remain unverified.
 - [ ] pgBackRest separate app/Temporal DB backup/PITR; restic file/config/eligible volumes, separate protected target, no live DB directory copying or application S3 backup target.
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
 ## Phase 6 — Supporting infrastructure
 - [x] Author network-disabled Apache Jena OWL Micro/SHACL acceptance with checksum-verified distribution and bounded JDK container; exact build, licence and owner execution pending.
-- [x] Author actual Traefik file-provider multi-site TLS, forwarded-header and route withdrawal/reapplication acceptance; no Docker socket or ACME connection. Owner execution pending.
+- [x] Author actual Traefik file-provider multi-site TLS, forwarded-header and route withdrawal/reapplication acceptance; no Docker socket or ACME connection. Owner at 872968d passed initial TLS routes and forwarded-header protection on Traefik 3.8.0 (sha256:00c9734983e74ae35a1fc18eaee9e9da13f3dde95c4e45b3b8c3b60e0dbd2d17); withdrawal failed (stale route returned 200). Native Linux tmpfs route publication authored; withdrawal/reapplication rerun pending.
 - [x] Author offline payment lifecycle, merchant isolation, idempotency and signed callback model fixture. Owner acceptance passed at bbc161a: offline transitions, merchant scope, idempotency and callback replay/tamper/expiry. Not Stripe interoperability or connector acceptance.
 - [x] Owner acceptance passed at 9f422b7: signed S3 CRUD, invalid/anonymous rejection, authorised bucket read/write, explicit cross-bucket read/list/write/delete denial, unchanged protected object and absent denied write, SMTP capture, restart persistence and cleanup. SeaweedFS digest 7ca46aeae2f223b37e5d91593c17ab37738eec6df6ab69b48a0487f7643342b9; Mailpit digest 23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e. Exact release/security review, adapter parity and remaining S3 gates pending.
 - [ ] SeaweedFS single-node local S3, repeatable buckets/credentials and same Storage adapter tests; Hetzner S3 configuration only.

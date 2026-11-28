@@ -2,15 +2,15 @@
 services:
   proxy:
     image: ${TRAEFIK_FIXTURE_IMAGE:?Reviewed digest-qualified Traefik image required}
+    entrypoint: ["/bin/sh", "-ec"]
     command:
-      - --entrypoints.websecure.address=:8443
-      - --entrypoints.websecure.forwardedheaders.insecure=false
-      - --providers.file.directory=/dynamic
-      - --providers.file.watch=true
-      - --log.level=INFO
-      - --api=false
+      - |
+        cp /seed/routes.yaml /dynamic/routes.yaml
+        exec traefik --entrypoints.websecure.address=:8443 --entrypoints.websecure.forwardedheaders.insecure=false --entrypoints.websecure.aliasheadersstrategy=delete --providers.file.directory=/dynamic --providers.file.watch=true --log.level=INFO --api=false --global.checknewversion=false --global.sendanonymoususage=false
+    tmpfs:
+      - /dynamic:size=1m,mode=0700
     volumes:
-      - "${PROXY_FIXTURE_DIR:?Required}/dynamic:/dynamic:ro"
+      - "${PROXY_FIXTURE_DIR:?Required}/dynamic:/seed:ro"
       - "${PROXY_FIXTURE_DIR:?Required}/certificates:/certificates:ro"
     ports: ["127.0.0.1::8443"]
     networks: [fixture]
