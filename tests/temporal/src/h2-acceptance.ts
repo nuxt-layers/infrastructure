@@ -1,6 +1,7 @@
 import { generateKeyPairSync, sign, randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { connect as connectHttp2, type SecureClientSessionOptions } from 'node:http2';
+import { connect as connectTls, type ConnectionOptions as TlsOptions } from 'node:tls';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client, Connection, type ConnectionOptions } from '@temporalio/client';
@@ -59,6 +60,32 @@ if (mode === 'keys') {
     });
     console.log('PASS: ' + label);
   }
+  // Force TLS 1.2 for certificate-negative probes: the peer must accept or
+  // reject the client certificate before the TLS handshake can complete.
+  async function certificateProbe(label: string, options: TlsOptions, allowed: boolean) {
+    await new Promise<void>((resolve, reject) => {
+      const socket = connectTls({ host: '127.0.0.1', port: Number(address!.split(':')[1]),
+        ALPNProtocols: ['h2'], ...options, minVersion: 'TLSv1.2', maxVersion: 'TLSv1.2' });
+      let settled = false;
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        socket.destroy();
+        if (error) reject(error); else resolve();
+      };
+      const timer = setTimeout(() => finish(new Error(label + ': inconclusive TLS timeout')), 10000);
+      socket.once('secureConnect', () => finish(allowed && socket.authorized && socket.alpnProtocol === 'h2'
+        ? undefined : new Error(label + ': unexpected TLS handshake success or invalid positive control')));
+      socket.on('error', (err: NodeJS.ErrnoException) => {
+        const code = err.code ?? '';
+        const rejected = /^(ERR_SSL_|ERR_TLS_|ECONNRESET$|EPIPE$|SELF_SIGNED_CERT_IN_CHAIN$|UNABLE_TO_VERIFY_LEAF_SIGNATURE$|UNABLE_TO_GET_ISSUER_CERT_LOCALLY$|CERT_SIGNATURE_FAILURE$)/.test(code);
+        finish(!allowed && rejected ? undefined : new Error(label + ': unexpected TLS error ' + code, { cause: err }));
+      });
+      socket.once('close', () => finish(new Error(label + ': TLS socket closed without a conclusive handshake result')));
+    });
+    console.log('PASS: ' + label);
+  }
   function grpcCode(err: unknown): number | undefined {
     for (let current = err; current && typeof current === 'object'; ) {
       const e = current as { code?: number; cause?: unknown };
@@ -97,10 +124,12 @@ if (mode === 'keys') {
     const secure = { ca: read('ca.crt'), cert: read('client.crt'), key: read('client.key'), servername: 'temporal', rejectUnauthorized: true };
     await transportProbe('trusted mutual TLS HTTP/2', true, secure, true);
     await transportProbe('plaintext refused', false, {}, false);
-    await transportProbe('missing client certificate', true, { ca: secure.ca, servername: 'temporal', rejectUnauthorized: true }, false);
-    await transportProbe('untrusted client certificate', true, { ...secure, cert: read('untrusted.crt'), key: read('untrusted.key') }, false);
-    await transportProbe('untrusted server CA', true, { ...secure, ca: read('wrong-ca.crt') }, false);
-    await transportProbe('wrong server identity', true, { ...secure, servername: 'wrong.invalid' }, false);
+    await certificateProbe('trusted TLS 1.2 control', secure, true);
+    await certificateProbe('missing client certificate', { ca: secure.ca, servername: 'temporal', rejectUnauthorized: true }, false);
+    await certificateProbe('untrusted client certificate', { ...secure, cert: read('untrusted.crt'), key: read('untrusted.key') }, false);
+    await certificateProbe('untrusted server CA', { ...secure, ca: read('wrong-ca.crt') }, false);
+    await certificateProbe('wrong server identity', { ...secure, servername: 'wrong.invalid' }, false);
+    await certificateProbe('trusted TLS 1.2 remains available', secure, true);
     await transportProbe('trusted transport remains available', true, secure, true);
     await use(admin, tls, c => describe(c, 'h2-a'));
     await use(writer, tls, c => describe(c, 'h2-a'));
