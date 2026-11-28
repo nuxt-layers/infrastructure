@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates git make gcc g++ flex bison \
     postgresql-server-dev-18 libreadline-dev libicu-dev \
     && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /build-evidence && dpkg-query -W > /build-evidence/builder-packages.tsv
 ENV PG_CONFIG=/usr/lib/postgresql/18/bin/pg_config
 RUN git clone --depth 1 --branch "${AGE_REF}" https://github.com/apache/age.git /src/age \
     && test "$(git -C /src/age rev-parse HEAD)" = "${AGE_SHA}" \
@@ -36,6 +37,7 @@ RUN git init /src/pgvector \
     && make -C /src/pgvector PG_CONFIG="${PG_CONFIG}" install
 
 FROM ${POSTGRES_BASE}
+COPY --from=extensions /build-evidence/ /usr/share/nuxt-layers/build-evidence/
 ARG CRON_PACKAGE_VERSION=1.6.8-2.pgdg12+1
 # pg_cron requires the extension binary in the runtime, not only the builder.
 RUN apt-get update && apt-get install -y --no-install-recommends "postgresql-18-cron${CRON_PACKAGE_VERSION:+=$CRON_PACKAGE_VERSION}" \
@@ -45,4 +47,5 @@ COPY --from=extensions /usr/lib/postgresql/18/lib/age.so /usr/lib/postgresql/18/
 COPY --from=extensions /usr/lib/postgresql/18/lib/pg_textsearch.so /usr/lib/postgresql/18/lib/
 # SQL scripts and control files are installed by each upstream PGXS make install.
 COPY --from=extensions /usr/share/postgresql/18/extension/ /usr/share/postgresql/18/extension/
+RUN dpkg-query -W > /usr/share/nuxt-layers/build-evidence/runtime-packages.tsv
 COPY init/ /docker-entrypoint-initdb.d/

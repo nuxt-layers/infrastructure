@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$SeaweedImage,
-    [Parameter(Mandatory)][string]$MailpitImage
+    [Parameter(Mandatory)][string]$MailpitImage,
+    [switch]$Advanced
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -39,7 +40,8 @@ try {
     $s3 = Get-Endpoint seaweedfs 8333
     $mail = Get-Endpoint mailpit 8025
     $smtp = Get-Endpoint mailpit 1025
-    & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret
+    $mode = if ($Advanced) { '--advanced' } else { '--baseline' }
+    & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret $mode
     if ($LASTEXITCODE -ne 0) { throw 'Supporting acceptance failed.' }
     & docker compose @compose restart seaweedfs
     if ($LASTEXITCODE -ne 0) { throw 'SeaweedFS restart failed.' }

@@ -10,7 +10,7 @@ const hmac = (key,data) => createHmac('sha256',key).update(data).digest();
 function exchange(endpoint,method,path,headers={},body='') {
   return new Promise((resolve,reject)=>{
     const req=httpRequest('http://'+endpoint+path,{
-      method,agent:false,headers:{...headers,...(method==='PUT'?{'content-length':Buffer.byteLength(body)}:{})},
+      method,agent:false,headers:{...headers,...(['PUT','POST'].includes(method)?{'content-length':Buffer.byteLength(body)}:{})},
       signal:AbortSignal.timeout(30000)
     },res=>{
       const chunks=[];
@@ -20,21 +20,33 @@ function exchange(endpoint,method,path,headers={},body='') {
       res.on('aborted',()=>reject(new Error('Response aborted')));
       res.on('end',()=>{
         const value=Buffer.concat(chunks).toString('utf8');
-        resolve({status:res.statusCode,ok:res.statusCode>=200&&res.statusCode<300,text:async()=>value,json:async()=>JSON.parse(value)});
+        resolve({headers:res.headers,status:res.statusCode,ok:res.statusCode>=200&&res.statusCode<300,text:async()=>value,json:async()=>JSON.parse(value)});
       });
     });
     req.on('error',reject);
-    req.end(method==='PUT'?body:undefined);
+    req.end(['PUT','POST'].includes(method)?body:undefined);
   }).catch(error=>{throw new Error(method+' '+path+' at '+endpoint+' failed: '+error.message,{cause:error});});
 }
-async function request(method,path,body='',key=secret, identity=access) {
+function encode(value){return encodeURIComponent(value).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase());}
+function canonicalQuery(params){return [...params].map(([k,v])=>[encode(k),encode(v)]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:a[1]<b[1]?-1:a[1]>b[1]?1:0).map(p=>p.join('=')).join('&');}
+function presign(method,path,age=0,expires=60){
+  const date=new Date(Date.now()-age*1000).toISOString().replace(/[:-]|\.\d{3}/g,'');
+  const day=date.slice(0,8),scope=day+'/us-east-1/s3/aws4_request';
+  const params=new URLSearchParams({'X-Amz-Algorithm':'AWS4-HMAC-SHA256','X-Amz-Credential':access+'/'+scope,'X-Amz-Date':date,'X-Amz-Expires':String(expires),'X-Amz-SignedHeaders':'host'});
+  const canonical=[method,path,canonicalQuery(params),'host:'+s3+'\n','host','UNSIGNED-PAYLOAD'].join('\n');
+  const signing=hmac(hmac(hmac(hmac('AWS4'+secret,day),'us-east-1'),'s3'),'aws4_request');
+  const signature=hmac(signing,['AWS4-HMAC-SHA256',date,scope,hash(canonical)].join('\n')).toString('hex');
+  return path+'?'+canonicalQuery(params)+'&X-Amz-Signature='+signature;
+}
+async function request(method,path,body='',key=secret, identity=access, extraHeaders={}) {
   const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g,'');
   const day = date.slice(0,8);
-  assert.ok(method==='PUT'||body==='', 'Non-PUT requests must sign an empty payload');
+  assert.ok(['PUT','POST'].includes(method)||body==='', 'Non-PUT requests must sign an empty payload');
   const payload = hash(body);
-  const headers = {host:s3,'x-amz-content-sha256':payload,'x-amz-date':date};
+  const headers = {host:s3,'x-amz-content-sha256':payload,'x-amz-date':date,...extraHeaders};
   const signed = Object.keys(headers).sort().join(';');
-  const canonical = [method,path,'',Object.keys(headers).sort().map(k=>k+':'+headers[k]+'\n').join(''),signed,payload].join('\n');
+  const [uri,query='']=path.split('?');
+  const canonical = [method,uri,canonicalQuery(new URLSearchParams(query)),Object.keys(headers).sort().map(k=>k+':'+headers[k]+'\n').join(''),signed,payload].join('\n');
   const scope = day+'/us-east-1/s3/aws4_request';
   const signing = hmac(hmac(hmac(hmac('AWS4'+key,day),'us-east-1'),'s3'),'aws4_request');
   headers.authorization = 'AWS4-HMAC-SHA256 Credential='+identity+'/'+scope+', SignedHeaders='+signed+', Signature='+hmac(signing,['AWS4-HMAC-SHA256',date,scope,hash(canonical)].join('\n')).toString('hex');
@@ -88,6 +100,41 @@ assert.equal((await request('DELETE','/infra-other')).ok,true);
 assert.equal((await request('PUT',bucket+'/persist.txt','restart checkpoint')).ok,true);
 console.log('PASS: scoped bucket access and cross-bucket read/write/list/delete denial');
 console.log('PASS: signed S3 bucket/object lifecycle and invalid/anonymous denial');
+if(mode==='--advanced'){
+  const target=bucket+'/advanced.txt', value='metadata fixture';
+  assert.equal((await request('PUT',target,value,secret,access,{'x-amz-meta-fixture-sha256':hash(value)})).status,200);
+  const head=await request('HEAD',target);
+  assert.equal(head.headers['x-amz-meta-fixture-sha256'],hash(value));
+  const url=presign('GET',target);
+  assert.equal(await (await exchange(s3,'GET',url)).text(),value);
+  assert.equal((await exchange(s3,'PUT',url,{},'forbidden')).status,403);
+  assert.equal((await exchange(s3,'GET',presign('GET',target,120,30))).status,403);
+  assert.equal(await (await request('GET',target)).text(),value);
+  assert.equal((await request('DELETE',target)).status,204);
+  const multi=bucket+'/multipart.txt';
+  async function initiate(){
+    const res=await request('POST',multi+'?uploads=');
+    assert.equal(res.status,200,await res.text());
+    const id=/<UploadId>([^<]+)<\/UploadId>/.exec(await res.text())?.[1];
+    assert.ok(id);return encode(id);
+  }
+  let id=await initiate();
+  const part=await request('PUT',multi+'?partNumber=1&uploadId='+id,'multipart fixture');
+  assert.equal(part.status,200,await part.text());
+  assert.match(part.headers.etag,/^"[a-fA-F0-9]+"$/);
+  const xml='<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>'+part.headers.etag+'</ETag></Part></CompleteMultipartUpload>';
+  const complete=await request('POST',multi+'?uploadId='+id,xml,secret,access,{'content-type':'application/xml'});
+  assert.equal(complete.status,200,await complete.text());
+  assert.match(await complete.text(),/<CompleteMultipartUploadResult/);
+  assert.equal(await (await request('GET',multi)).text(),'multipart fixture');
+  assert.equal((await request('DELETE',multi)).status,204);
+  id=await initiate();
+  assert.equal((await request('PUT',multi+'?partNumber=1&uploadId='+id,'abort fixture')).status,200);
+  assert.equal((await request('DELETE',multi+'?uploadId='+id)).status,204);
+  assert.equal((await request('GET',multi+'?uploadId='+id)).status,404);
+  assert.equal((await request('GET',multi)).status,404);
+  console.log('PASS: presigned method/expiry, metadata integrity, multipart completion and abort');
+}
 const port=Number(smtp.split(':')[1]);
 const socket=createConnection({host:'127.0.0.1',port});
 socket.setEncoding('utf8');
