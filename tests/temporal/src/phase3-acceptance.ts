@@ -9,12 +9,17 @@ const taskQueue = 'infra-phase3-' + workflowId;
 const namespace = 'default';
 
 async function main() {
-  if (!workflowId || !address || !/^127\.0\.0\.1:\d+$/.test(address) || !['execute','suspend','resume','verify'].includes(mode)) {
+  if (!workflowId || !address || !/^127\.0\.0\.1:\d+$/.test(address) || !['execute','suspend','resume','verify','probe'].includes(mode)) {
     throw new Error('Invalid isolated Phase 3 invocation');
   }
   const connection = await Connection.connect({ address, connectTimeout: '10 seconds' });
   const client = new Client({ connection, namespace });
   try {
+    if (mode === 'probe') {
+      await connection.withDeadline(Date.now() + 5000, () => connection.workflowService.describeNamespace({ namespace }));
+      console.log('PASS: host SDK reached Temporal namespace');
+      return;
+    }
     const handle = client.workflow.getHandle(workflowId);
     if (mode === 'verify') {
       if (await handle.result() !== 2) throw new Error('Unexpected historical result');
