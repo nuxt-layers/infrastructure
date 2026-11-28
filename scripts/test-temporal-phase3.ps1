@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('All','Startup','Execution','Recovery','Functional','Schedule','Heartbeat','Visibility','Separation','Crash')][string]$Stage = 'All')
+param([ValidateSet('All','Startup','Execution','Recovery','Functional','Schedule','Heartbeat','Visibility','Separation','Crash','WorkerCrash')][string]$Stage = 'All')
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -116,6 +116,13 @@ try {
             if ($Stage -in @('All','Functional',$mode)) {
                 Invoke-Functional ($mode.ToLowerInvariant())
             }
+        }
+        if ($Stage -in @('All','WorkerCrash')) {
+            Push-Location (Join-Path $root 'tests/temporal')
+            try {
+                & pnpm exec tsx src/worker-crash-acceptance.ts controller $workflowId
+                if ($LASTEXITCODE -ne 0) { throw 'Worker crash harness failed.' }
+            } finally { Pop-Location }
         }
         if ($Stage -in @('All','Functional','Crash')) {
             $crashId = $workflowId + '-crash'

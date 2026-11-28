@@ -24,6 +24,8 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
+- [x] Owner H2 passed 28 November 2026 at 1acdc14: trusted mTLS, plaintext and invalid certificate rejection, missing/invalid/expired JWT denial, scoped read/write denial, authenticated worker execution, historical retrieval and cleanup.
+- [ ] H3 standalone WorkerCrash harness authored; owner acceptance pending.
 - [x] Owner H1 persistence hardening passed 28 November 2026 at 62fb18f: explicit fresh schema migrations, independent runtime TCP logins, denied DDL/metadata writes/SET ROLE/cross-database connections, disabled migration login, explicit namespace bootstrap, real workflow/visibility and cleanup (docs/TEMPORAL-HARDENING.md).
 - [x] Owner Functional package passed 28 November 2026 at 0cadd87: automatic single scheduled dispatch, heartbeat checkpoint recovery, SQL visibility, namespace/queue routing, abrupt server and database termination, replay and cleanup.
 - [x] Author standalone disposable acceptance stack and selectable startup/execution/recovery harness; see docs/TEMPORAL-PHASE-3.md. Owner Startup passed 27 November 2026; execution and visibility schema versions recorded.
