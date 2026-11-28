@@ -37,7 +37,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Verify controlled upgrade and published temporal-gateway contract; active worker-process crash, clean restart, abrupt server/database crash, heartbeat and worker/history acceptance passed. Never reuse PG16 volume unmodified.
 
 ## Phase 4 — Hosting environment
-- [x] Author read-only dedicated Linux VM operational evidence collector, SSH default policy, UTC/chrony NTS indicators, Coolify runtime and synthetic manifest negative checks; owner execution and external probes pending.
+- [x] Author read-only dedicated Linux VM operational evidence collector, SSH default policy, UTC/chrony NTS indicators, Coolify runtime and synthetic manifest negative checks; Owner synthetic manifest policy acceptance passed at 9d960d5 on 28 November 2026: valid private digest-qualified bounded manifest accepted; mutable image, published database port, public network, inline credential, privileged container, host socket mount, missing memory budget and unbounded logging rejected. Actual Linux VM collector and external probes pending.
 - [x] Author fail-closed rendered production manifest policy checker and local VM/operator runbook; execution and actual provider controls pending.
 - [x] Author Linux host prerequisite/resource inspection and inactive private application database production candidate. No provisioning or operational acceptance claimed.
 - [ ] Provision production-representative local Linux VM using existing equipment, Coolify/Traefik, private networking, host security, resource budgets, secrets, UTC/NTP/NTS and qualified status.
