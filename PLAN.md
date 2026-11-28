@@ -42,7 +42,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Crypto inventory, approved profiles and negative isolation parity; capacity and no-cost verification.
 
 ## Phase 5 — Recovery
-- [x] Author bounded generic PITR fixture, observed restore duration and encrypted restic wrong-password refusal. Owner restic acceptance passed at 872968d (image sha256:c907f4b76cf63e41517573a37b0319ff78b83db524aac3401a1cf54521d8f2a4, integrity, incorrect password refusal, exact restored hash, 1.2492453s observed restore); generic PITR and application/Temporal-specific recovery remain unverified.
+- [x] Author bounded generic PITR fixture, observed restore duration and encrypted restic wrong-password refusal. Owner restic acceptance passed at 872968d (image sha256:c907f4b76cf63e41517573a37b0319ff78b83db524aac3401a1cf54521d8f2a4, integrity, incorrect password refusal, exact restored hash, 1.2492453s observed restore); generic PITR owner acceptance passed at eb52007 with pgBackRest 2.60.1-1.pgdg12+1, encrypted full backup, named WAL recovery point preceding destructive transaction, independent restore volume, 8.7645416s observed recovery and cleanup. Non-fatal root group mapping warning requires production ownership review. Application/Temporal-specific recovery remains unverified.
 - [ ] pgBackRest separate app/Temporal DB backup/PITR; restic file/config/eligible volumes, separate protected target, no live DB directory copying or application S3 backup target.
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
