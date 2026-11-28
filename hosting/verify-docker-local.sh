@@ -5,6 +5,8 @@ set -euo pipefail
 systemctl is-active --quiet docker.service || { echo 'UNKNOWN: Docker inactive'; exit 3; }
 command -v python3 >/dev/null
 failed=0
+container_ids=$(docker ps -aq)
+listeners=$(ss -H -lntp)
 while IFS= read -r id; do
  [[ -n "$id" ]] || continue
  # Include stopped containers because restart policies can activate them.
@@ -26,9 +28,9 @@ sys.exit(bool(errors))
   printf 'FAIL: container %s\n' "$name"
   failed=1
  fi
-done < <(docker ps -aq)
+done <<< "$container_ids"
 # The Docker socket must not be served by an IP listener.
-if ss -H -lntp | grep -E ':(2375|2376)([[:space:]]|$)|users:\(\("dockerd"' ; then
+if grep -E ':(2375|2376)([[:space:]]|$)|users:\(\("dockerd"' <<< "$listeners"; then
  echo 'FAIL: potential network Docker API listener'
  failed=1
 fi
