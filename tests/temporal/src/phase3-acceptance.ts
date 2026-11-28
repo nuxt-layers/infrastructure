@@ -47,7 +47,7 @@ async function main() {
           return;
         }
         const started = await client.workflow.start(phase3Workflow, {
-          workflowId, taskQueue, args: [mode === 'suspend'],
+          workflowId, taskQueue, args: [mode === 'suspend'], workflowIdReusePolicy: 'REJECT_DUPLICATE',
           workflowExecutionTimeout: '10 minutes',
         });
         if (mode === 'execute') {

@@ -118,9 +118,10 @@ try {
             }
         }
         if ($Stage -in @('All','WorkerCrash')) {
+            $workerCrashId = 'infra-phase3-' + [guid]::NewGuid().ToString('N')
             Push-Location (Join-Path $root 'tests/temporal')
             try {
-                & pnpm exec tsx src/worker-crash-acceptance.ts controller $workflowId
+                & pnpm exec tsx src/worker-crash-acceptance.ts controller $workerCrashId
                 if ($LASTEXITCODE -ne 0) { throw 'Worker crash harness failed.' }
             } finally { Pop-Location }
         }
