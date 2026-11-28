@@ -8,8 +8,14 @@ iface=${3:-}
 [[ $EUID = 0 ]] || { echo 'Root required' >&2; exit 2; }
 [[ $profile = local || $profile = production ]] || { echo 'Specify local or production' >&2; exit 2; }
 [[ $mode = --check || $mode = --apply ]] || exit 2
+# Production requires a separately reviewed provider firewall and management path.
+if [[ $profile = production && $mode = --apply ]]; then echo "Production activation blocked pending owner-approved provider firewall and console acceptance." >&2; exit 3; fi
 [[ $iface =~ ^[a-zA-Z0-9_.-]+$ && $iface != lo ]] && ip link show dev "$iface" >/dev/null || { echo 'Explicit external interface required' >&2; exit 2; }
 command -v nft >/dev/null
+# Refuse additional non-container interfaces; never silently leave an uplink unprotected.
+while IFS= read -r dev; do
+ case "$dev" in lo|"$iface"|docker0|br-*|veth*) ;; *) echo "Unreviewed interface: $dev" >&2; exit 3;; esac
+done < <(ls -1 /sys/class/net)
 command -v systemctl >/dev/null
 # Require console access for application; production SSH ingress intentionally denied here.
 # Existing established connections are permitted; management must use a separately reviewed private interface.
