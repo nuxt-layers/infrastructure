@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('All','Startup','Execution','Recovery')][string]$Stage = 'All')
+param([ValidateSet('All','Startup','Execution','Recovery','Functional','Schedule','Heartbeat','Visibility','Separation','Crash')][string]$Stage = 'All')
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -45,6 +45,15 @@ function Invoke-Harness {
         if ($LASTEXITCODE -ne 0) { throw "Temporal harness failed: $Mode" }
     } finally { Pop-Location }
 }
+function Invoke-Functional {
+    param([string]$Mode)
+    $id = 'infra-phase3-' + [guid]::NewGuid().ToString('N')
+    Push-Location (Join-Path $root 'tests/temporal')
+    try {
+        & pnpm exec tsx src/functional-acceptance.ts $Mode $id
+        if ($LASTEXITCODE -ne 0) { throw "Functional harness failed: $Mode" }
+    } finally { Pop-Location }
+}
 try {
     "TEMPORAL_FIXTURE_PASSWORD=$([guid]::NewGuid().ToString('N'))" | Set-Content -Encoding utf8 $envFile
     & docker compose @compose up -d --wait
@@ -76,7 +85,29 @@ try {
         } finally { Pop-Location }
         Wait-HostFrontend
         $workflowId = 'infra-phase3-' + [guid]::NewGuid().ToString('N')
-        Invoke-Harness 'execute' $workflowId
+        if ($Stage -in @('All','Execution','Recovery')) {
+            Invoke-Harness 'execute' $workflowId
+        }
+        foreach ($mode in @('Schedule','Heartbeat','Visibility','Separation')) {
+            if ($Stage -in @('All','Functional',$mode)) {
+                Invoke-Functional ($mode.ToLowerInvariant())
+            }
+        }
+        if ($Stage -in @('All','Functional','Crash')) {
+            $crashId = $workflowId + '-crash'
+            Invoke-Harness 'suspend' $crashId
+            & docker compose @compose kill -s SIGKILL temporal
+            if ($LASTEXITCODE -ne 0) { throw 'Temporal abrupt stop failed.' }
+            & docker compose @compose kill -s SIGKILL postgres-temporal
+            if ($LASTEXITCODE -ne 0) { throw 'Persistence abrupt stop failed.' }
+            & docker compose @compose up -d --wait
+            if ($LASTEXITCODE -ne 0) { throw 'Crash restart failed.' }
+            Wait-Frontend
+            Wait-HostFrontend
+            Invoke-Harness 'resume' $crashId
+            Invoke-Harness 'verify' $crashId
+            Write-Host 'PASS: abrupt server and persistence termination, suspended workflow replay and durable result.'
+        }
         if ($Stage -in @('All','Recovery')) {
             $pendingId = $workflowId + '-pending'
             Invoke-Harness 'suspend' $pendingId

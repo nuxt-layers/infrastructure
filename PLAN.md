@@ -24,6 +24,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Search inference resistance and controlled upgrade remain separate gates.
 
 ## Phase 3 — Temporal
+- [x] Author selectable functional package: automatic schedule, heartbeat checkpoint timeout, SQL visibility, namespace/queue routing and abrupt server/persistence termination. Owner acceptance pending.
 - [x] Author standalone disposable acceptance stack and selectable startup/execution/recovery harness; see docs/TEMPORAL-PHASE-3.md. Owner Startup passed 27 November 2026; execution and visibility schema versions recorded.
 - [x] Pin verified disposable Temporal image digest; owner Recovery passed on 28 November 2026 at 504fe23: bounded retry, graceful worker drain, ordered restart, changed loopback port rediscovery, history retrieval and suspended workflow resumption without repeat activity.
 - [x] Existing optional auto-setup development server/UI, separate PG18 volumes and SDK acceptance harness/lockfile (PR #5), connection contract (PR #6).
