@@ -1,0 +1,31 @@
+# Disposable local supporting services; never deploy this file remotely.
+services:
+  seaweedfs:
+    image: ${SEAWEFS_IMAGE:?Supply reviewed digest-qualified SeaweedFS image}
+    command: ["server", "-dir=/data", "-s3", "-s3.config=/run/fixture/s3.json", "-ip=seaweedfs"]
+    volumes:
+      - object_data:/data
+      - ${SUPPORT_FIXTURE_DIR:?Fixture directory}/s3.json:/run/fixture/s3.json:ro
+    ports: ["127.0.0.1::8333"]
+    networks: [fixture]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
+    logging: &bounded
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  mailpit:
+    image: ${MAILPIT_IMAGE:?Supply reviewed digest-qualified Mailpit image}
+    environment:
+      MP_MAX_MESSAGES: "100"
+    ports: ["127.0.0.1::1025", "127.0.0.1::8025"]
+    networks: [fixture]
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    logging: *bounded
+networks:
+  fixture:
+    internal: true
+volumes:
+  object_data: {}
