@@ -17,6 +17,9 @@ services:
       interval: 2s
       timeout: 3s
       retries: 60
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
     logging: &logs
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
@@ -66,6 +69,9 @@ services:
       timeout: 3s
       retries: 60
     profiles: [tools]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
     logging: *logs
 networks:
   private:

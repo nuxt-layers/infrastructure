@@ -36,15 +36,18 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Verify controlled upgrade and published temporal-gateway contract; active worker-process crash, clean restart, abrupt server/database crash, heartbeat and worker/history acceptance passed. Never reuse PG16 volume unmodified.
 
 ## Phase 4 — Hosting environment
+- [x] Author Linux host prerequisite/resource inspection and inactive private application database production candidate. No provisioning or operational acceptance claimed.
 - [ ] Provision production-representative local Linux VM using existing equipment, Coolify/Traefik, private networking, host security, resource budgets, secrets, UTC/NTP/NTS and qualified status.
 - [ ] Prepare Hetzner installation/production manifests without activating paid services; separate profiles, no dev credentials/override, exact provider assurance and region evidence.
 - [ ] Crypto inventory, approved profiles and negative isolation parity; capacity and no-cost verification.
 
 ## Phase 5 — Recovery
+- [x] Author bounded generic PITR fixture, observed restore duration and encrypted restic wrong-password refusal. Owner execution pending; application/Temporal-specific recovery not yet verified.
 - [ ] pgBackRest separate app/Temporal DB backup/PITR; restic file/config/eligible volumes, separate protected target, no live DB directory copying or application S3 backup target.
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
 ## Phase 6 — Supporting infrastructure
+- [x] Author offline payment lifecycle, merchant isolation, idempotency and signed callback model fixture. Not Stripe interoperability or connector acceptance; owner execution pending.
 - [x] Owner acceptance passed at 9f422b7: signed S3 CRUD, invalid/anonymous rejection, authorised bucket read/write, explicit cross-bucket read/list/write/delete denial, unchanged protected object and absent denied write, SMTP capture, restart persistence and cleanup. SeaweedFS digest 7ca46aeae2f223b37e5d91593c17ab37738eec6df6ab69b48a0487f7643342b9; Mailpit digest 23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e. Exact release/security review, adapter parity and remaining S3 gates pending.
 - [ ] SeaweedFS single-node local S3, repeatable buckets/credentials and same Storage adapter tests; Hetzner S3 configuration only.
 - [x] Owner reported OIDC, HTTP fault simulation, DNS and local TLS acceptance passed at baseline 9e8be93; exact commands/evidence remain in the fixture references. No Coolify or ACME acceptance implied.
@@ -53,6 +56,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Isolated Apache Jena bounded ontology/SHACL, selected processing/conditional collaboration and solver facilities; verify exact builds and licences.
 
 ## Phase 7 — Observability
+- [x] Author root-only local resource/time observation CLI; unknown statuses retained for unverified authentication, backups and application readiness. Host IAM integration and alerts remain outstanding.
 - [ ] Bounded logs, resource metrics, qualified readiness/time quality, alerts and optional collection/tracing profiles.
 - [ ] Operator access exclusively explicitly authorised host super-admins; no tenant business browsing. Optional GUI never prerequisite for recovery.
 

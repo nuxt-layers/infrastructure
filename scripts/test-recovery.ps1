@@ -29,6 +29,7 @@ try {
     Invoke-Sql database "DELETE FROM recovery_probe;"
     Invoke-Sql database "SELECT pg_switch_wal();"
     Invoke-Compose exec -T -u postgres database pgbackrest --stanza=fixture check
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     Invoke-Compose stop database
     Invoke-Compose run --rm --no-deps restore --stanza=fixture --type=name --target=fixture_target --target-action=promote restore
     Invoke-Compose up -d --wait recovered
@@ -39,6 +40,8 @@ try {
         Start-Sleep -Seconds 2
     }
     if ($result -ne '1,2') { throw 'Point-in-time restore did not reproduce the expected rows.' }
+    $timer.Stop()
+    Write-Host "Observed database recovery seconds: $($timer.Elapsed.TotalSeconds)"
     Write-Host 'PASS: encrypted pgBackRest full backup and WAL point-in-time restoration into independent volume.'
 } finally {
     if (Test-Path $envFile) {

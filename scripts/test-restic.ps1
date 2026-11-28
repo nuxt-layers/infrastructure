@@ -22,10 +22,19 @@ try {
     Invoke-Restic backup /source
     Invoke-Restic check --read-data
     Remove-Item -LiteralPath $file -Force
+    $correctPassword = $env:RESTIC_PASSWORD
+    try {
+        $env:RESTIC_PASSWORD = [guid]::NewGuid().ToString('N')
+        & docker run --rm --network none --memory 512m --cpus 1 --pids-limit 128 -e RESTIC_PASSWORD -v "${repo}:/backup:ro" $ResticImage -r /backup snapshots
+        if ($LASTEXITCODE -eq 0) { throw 'Incorrect backup password was accepted.' }
+    } finally { $env:RESTIC_PASSWORD = $correctPassword }
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     Invoke-Restic restore latest --target /restore
+    $timer.Stop()
+    Write-Host "Observed file restore seconds: $($timer.Elapsed.TotalSeconds)"
     $actual = (Get-FileHash -LiteralPath (Join-Path $target 'source/fixture.txt') -Algorithm SHA256).Hash
     if ($actual -ne $expected) { throw 'Restored file hash mismatch.' }
-    Write-Host 'PASS: encrypted restic backup, repository integrity and lost-file recovery.'
+    Write-Host 'PASS: encrypted restic backup, repository integrity, wrong-password denial and lost-file recovery.'
 } finally {
     [Environment]::SetEnvironmentVariable('RESTIC_PASSWORD',$previous,'Process')
     if (Test-Path $root) { Remove-Item -LiteralPath $root -Recurse -Force }
