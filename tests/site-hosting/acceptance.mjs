@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:https';
 import { request } from 'node:https';
-import { createServer as createHttp } from 'node:http';
+import { createServer as createHttp, request as httpRequest } from 'node:http';
 import { createSecureContext } from 'node:tls';
 import { createSocket } from 'node:dgram';
 import { Resolver } from 'node:dns/promises';
@@ -62,10 +62,20 @@ try {
  await assert.rejects(()=>call(sites[0],{trust:wrong}),{code:'UNABLE_TO_VERIFY_LEAF_SIGNATURE'});
  await assert.rejects(()=>call(sites[0],{servername:'unknown.fixture.test'}));
  assert.equal((await call(sites[0],{host:sites[1]})).status,421);
- for(const site of sites){
-  const response=await fetch('http://127.0.0.1:'+http.address().port,{headers:{host:site},redirect:'manual',signal:AbortSignal.timeout(3000)});
-  assert.equal(response.status,308);assert.equal(response.headers.get('location'),'https://'+site+':'+server.address().port+'/');
+ function redirectProbe(host){
+  return new Promise((resolve,reject)=>{
+   const req=httpRequest({hostname:'127.0.0.1',port:http.address().port,headers:{Host:host},agent:false,timeout:3000},res=>{
+    res.resume();res.on('end',()=>resolve({status:res.statusCode,location:res.headers.location}));res.on('error',reject);
+   });
+   req.on('error',reject);req.on('timeout',()=>req.destroy(Error('HTTP redirect probe timeout')));req.end();
+  });
  }
+ for(const site of sites){
+  const response=await redirectProbe(site);
+  assert.equal(response.status,308);assert.equal(response.location,'https://'+site+':'+server.address().port+'/');
+ }
+ const unknown=await redirectProbe('unknown.fixture.test');
+ assert.equal(unknown.status,421);assert.equal(unknown.location,undefined);
  console.log('PASS: local CA trust, SNI multi-site routing, cross-site denial, HTTP redirect');
 } finally {
  dns.close();server.close();http.close();
