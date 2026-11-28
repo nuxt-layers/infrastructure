@@ -4,7 +4,7 @@ services:
     image: ${PEBBLE_IMAGE:?Digest-qualified Pebble required}
     environment:
       PEBBLE_VA_NOSLEEP: "1"
-    networks: [fixture]
+    networks: [fixture, probe]
     ports: ["127.0.0.1::15000"]
     mem_limit: 256m
     cpus: 0.5
@@ -32,6 +32,7 @@ services:
     networks:
       fixture:
         aliases: [site-a.fixture.test, site-b.fixture.test]
+      probe: {}
     ports: ["127.0.0.1::8443"]
     mem_limit: 256m
     cpus: 0.5
@@ -47,5 +48,7 @@ services:
 networks:
   fixture:
     internal: true
+  probe:
+    driver: bridge
 volumes:
   state: {}
