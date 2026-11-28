@@ -1,0 +1,5 @@
+# Example only. Select and approve an NTS-capable UTC source before installation.
+# Replace this entire example with approved source configuration, not an additional
+# unauthenticated pool. Preserve distribution driftfile and other necessary settings.
+# server APPROVED_NTS_HOST iburst nts
+# No public service activation, no automatic clock stepping or host modification.

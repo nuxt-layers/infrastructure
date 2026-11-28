@@ -1,0 +1,21 @@
+http:
+  routers:
+    site-a:
+      rule: "Host(`site-a.fixture.test`)"
+      entryPoints: [websecure]
+      service: site
+      tls: {certResolver: local}
+    site-b:
+      rule: "Host(`site-b.fixture.test`)"
+      entryPoints: [websecure]
+      service: site
+      tls: {certResolver: local}
+  services:
+    site:
+      loadBalancer:
+        servers: [{url: "http://site:80"}]
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true
