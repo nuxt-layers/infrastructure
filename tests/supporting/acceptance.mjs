@@ -30,6 +30,7 @@ function exchange(endpoint,method,path,headers={},body='') {
 async function request(method,path,body='',key=secret, identity=access) {
   const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g,'');
   const day = date.slice(0,8);
+  assert.ok(method==='PUT'||body==='', 'Non-PUT requests must sign an empty payload');
   const payload = hash(body);
   const headers = {host:s3,'x-amz-content-sha256':payload,'x-amz-date':date};
   const signed = Object.keys(headers).sort().join(';');
@@ -74,9 +75,13 @@ assert.equal((await request('PUT','/infra-other/private.txt','private')).ok,true
 assert.equal((await restricted('PUT',bucket+'/scoped.txt','scoped')).ok,true);
 assert.equal(await (await restricted('GET',bucket+'/scoped.txt')).text(),'scoped');
 for(const [method,path] of [['GET','/infra-other/private.txt'],['GET','/infra-other'],['PUT','/infra-other/denied.txt'],['DELETE','/infra-other/private.txt']]) {
-  assert.equal((await restricted(method,path,'denied')).status,403);
+  const response=await restricted(method,path,method==='PUT'?'denied':'');
+  const error=await response.text();
+  assert.equal(response.status,403,method+' '+path+' expected access denial; response: '+error.slice(0,500));
+  assert.match(error,/<Code>AccessDenied<\/Code>/,method+' '+path+' must fail on authorisation, not request validity');
 }
 assert.equal(await (await request('GET','/infra-other/private.txt')).text(),'private');
+assert.equal((await request('GET','/infra-other/denied.txt')).status,404);
 assert.equal((await restricted('DELETE',bucket+'/scoped.txt')).ok,true);
 assert.equal((await request('DELETE','/infra-other/private.txt')).ok,true);
 assert.equal((await request('DELETE','/infra-other')).ok,true);
