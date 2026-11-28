@@ -2,7 +2,7 @@ import { generateKeyPairSync, sign, randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Client, Connection } from '@temporalio/client';
+import { Client, Connection, type ConnectionOptions } from '@temporalio/client';
 import { NativeConnection, Worker } from '@temporalio/worker';
 import { phase3Workflow } from './phase3-workflows.js';
 
@@ -30,8 +30,8 @@ if (mode === 'keys') {
   const writer = token(['h2-a:write', 'h2-a:worker']);
   const reader = token(['h2-a:read']);
   const describe = (connection: Connection, namespace: string) => connection.withDeadline(Date.now() + 5000, () => connection.workflowService.describeNamespace({ namespace }));
-  async function use<T>(apiKey: string | undefined, transport: typeof tls | boolean | object, fn: (c: Connection) => Promise<T>) {
-    const c = Connection.lazy({ address, tls: transport, ...(apiKey ? { apiKey } : {}), connectTimeout: '5 seconds' });
+  async function use<T>(apiKey: string | undefined, transport: ConnectionOptions['tls'], fn: (c: Connection) => Promise<T>) {
+    const c = Connection.lazy({ address, tls: transport, ...(apiKey ? { metadata: { authorization: 'Bearer ' + apiKey } } : {}), connectTimeout: '5 seconds' });
     try { return await fn(c); } finally { await c.close(); }
   }
   async function deny(label: string, code: number, fn: () => Promise<unknown>) {
@@ -43,7 +43,7 @@ if (mode === 'keys') {
     throw new Error(label + ': unexpectedly allowed');
   }
   if (mode === 'bootstrap') {
-    await use(admin, tls, async c => {
+    try { await use(admin, tls, async c => {
       for (const namespace of ['h2-a', 'h2-b']) {
         try { await describe(c, namespace); }
         catch (err) {
@@ -53,7 +53,11 @@ if (mode === 'keys') {
       }
       await describe(c, 'h2-a');
       await describe(c, 'h2-b');
-    });
+    }); } catch (err) {
+      const code = (err as { code?: number }).code;
+      console.error('Bootstrap gRPC status:', code ?? 'unknown', (err as Error).message);
+      process.exitCode = [4, 5, 14].includes(code ?? -1) ? 10 : 1;
+    }
   } else if (mode === 'accept') {
     await use(admin, tls, async c => { await describe(c, 'h2-a'); await describe(c, 'h2-b'); });
     // Transport denial must be UNAVAILABLE, not a successful transport with an application denial.

@@ -38,21 +38,33 @@ try {
     } finally { Pop-Location }
     Invoke-Sdk 'src/h2-acceptance.ts' @('keys',$fixture)
     Invoke-Compose up -d --wait postgres-temporal
-    Invoke-Compose run --rm --no-deps migrate
+    $migrationLog = & docker compose @compose run --rm --no-deps migrate 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $migrationLog | Select-Object -Last 30 | ForEach-Object {
+            $message = [string]$_
+            foreach ($secret in $secrets.Values) { $message = $message.Replace($secret,'[REDACTED]') }
+            Write-Host $message
+        }
+        throw 'Schema migration failed.'
+    }
+    Write-Host 'PASS: execution and visibility migrations'
     Get-Content -Raw (Join-Path $root 'temporal/hardened/finalise.sql') | & docker compose @compose exec -T postgres-temporal psql -X -U temporal_bootstrap -d postgres -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw 'Privilege finalisation failed.' }
-    Invoke-Compose up -d jwks
+    Invoke-Compose up -d --wait jwks
     Invoke-Compose up -d temporal
     $ready = $false
     for ($i=0; $i -lt 40; $i++) {
         $address = (& docker compose @compose port temporal 7233 | Out-String).Trim()
         if ($LASTEXITCODE -eq 0 -and $address -match '^127\.0\.0\.1:\d+$') {
             $env:TEMPORAL_ADDRESS = $address
+            Push-Location (Join-Path $root 'tests/temporal')
             try {
-                Invoke-Sdk 'src/h2-acceptance.ts' @('bootstrap',$fixture)
-                $ready = $true
-                break
-            } catch { Write-Host "Authenticated bootstrap attempt $($i+1) failed." }
+                & pnpm exec tsx src/h2-acceptance.ts bootstrap $fixture
+                $status = $LASTEXITCODE
+            } finally { Pop-Location }
+            if ($status -eq 0) { $ready = $true; break }
+            if ($status -ne 10) { throw 'Authenticated bootstrap rejected; inspect server diagnostics.' }
+            Write-Host "Transient bootstrap attempt $($i+1) failed."
         }
         Start-Sleep -Seconds 2
     }
@@ -62,7 +74,8 @@ try {
 } catch {
     if (Test-Path -LiteralPath $envFile) {
         & docker compose @compose ps -a
-        $logs = & docker compose @compose logs --no-color --tail 80 postgres-temporal temporal jwks 2>&1
+        $authLogs = & docker compose @compose logs --no-color temporal 2>&1 | Select-String -Pattern 'Authorization error|token keys|RSA key|audience mismatch|permission|JWKS' | Select-Object -Last 20
+        $logs = @($authLogs) + @(& docker compose @compose logs --no-color --tail 35 temporal jwks 2>&1)
         foreach ($line in $logs) {
             $message = [string]$line
             foreach ($secret in $secrets.Values) { $message = $message.Replace($secret,'[REDACTED]') }
