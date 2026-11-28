@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { fileURLToPath } from 'node:url';
+import { createHash, createPublicKey, randomBytes, verify } from 'node:crypto';
+const child=spawn(process.execPath,[fileURLToPath(new URL('./server.mjs',import.meta.url))],{stdio:['ignore','pipe','inherit']});
+try {
+ const [chunk]=await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error('Fixture exited');}),new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('Startup timeout')),5000);t.unref();})]);
+ const issuer=chunk.toString().trim();assert.match(issuer,/^http:\/\/127\.0\.0\.1:\d+$/);
+ const get=(path,options={})=>fetch(issuer+path,{signal:AbortSignal.timeout(5000),...options});
+ const discovery=await (await get('/.well-known/openid-configuration')).json();assert.equal(discovery.issuer,issuer);
+ const {keys}=await (await get('/jwks')).json();
+ const verifier=randomBytes(32).toString('base64url'), nonce=randomBytes(16).toString('hex'),state=randomBytes(16).toString('hex');
+ const redirect=issuer+'/callback';
+ const query=new URLSearchParams({client_id:'fixture-client',redirect_uri:redirect,response_type:'code',scope:'openid',code_challenge_method:'S256',code_challenge:createHash('sha256').update(verifier).digest('base64url'),nonce,state});
+ const auth=await get('/authorize?'+query,{redirect:'manual'});assert.equal(auth.status,302);
+ const callback=new URL(auth.headers.get('location'));assert.equal(callback.searchParams.get('state'),state);
+ const code=callback.searchParams.get('code');
+ const token=(v)=>get('/token',{method:'POST',body:new URLSearchParams({grant_type:'authorization_code',client_id:'fixture-client',redirect_uri:redirect,code,code_verifier:v})});
+ assert.equal((await token('x'.repeat(43))).status,400);
+ const response=await token(verifier);assert.equal(response.status,200);
+ const {id_token}=await response.json();const [h,p,s]=id_token.split('.');
+ assert.equal(JSON.parse(Buffer.from(h,'base64url')).alg,'RS256');
+ assert.equal(verify('RSA-SHA256',Buffer.from(h+'.'+p),createPublicKey({key:keys[0],format:'jwk'}),Buffer.from(s,'base64url')),true);
+ const claims=JSON.parse(Buffer.from(p,'base64url'));assert.equal(claims.iss,issuer);assert.equal(claims.aud,'fixture-client');assert.equal(claims.nonce,nonce);assert.ok(claims.exp>Math.floor(Date.now()/1000));
+ assert.equal((await token(verifier)).status,400);
+ query.set('redirect_uri','http://invalid.example');assert.equal((await get('/authorize?'+query,{redirect:'manual'})).status,400);
+ console.log('PASS: OIDC discovery, signed ID token, PKCE, redirect and replay denial');
+ assert.equal((await get('/fault/rate-limit')).status,429);
+ assert.equal((await get('/fault/unavailable')).status,503);
+ await assert.rejects(()=>get('/fault/timeout',{signal:AbortSignal.timeout(200)}),{name:'TimeoutError'});
+ const post=(value)=>get('/operations',{method:'POST',headers:{'idempotency-key':'fixture-key'},body:new URLSearchParams({value})});
+ const a=await post('one');assert.equal(a.status,201);const first=await a.json();
+ const b=await post('one');assert.equal(b.status,200);assert.deepEqual(await b.json(),first);
+ assert.equal((await post('two')).status,409);
+ console.log('PASS: rate limit, unavailable, timeout, idempotent replay and conflict');
+}finally{if(child.exitCode===null&&child.signalCode===null){const exited=once(child,'exit');child.kill();await exited;}}
