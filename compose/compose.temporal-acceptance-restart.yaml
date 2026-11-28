@@ -1,0 +1,13 @@
+# Restart an already provisioned disposable Phase 3 database without auto-setup.
+services:
+  temporal:
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        export BIND_ON_IP=0.0.0.0
+        export TEMPORAL_BROADCAST_ADDRESS=$$(getent hosts "$$(hostname)" | awk 'NR==1 {print $$1}')
+        test -n "$$TEMPORAL_BROADCAST_ADDRESS"
+        dockerize -template /etc/temporal/config/config_template.yaml:/etc/temporal/config/docker.yaml
+        exec temporal-server --env docker start
+    environment:
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/development-sql.yaml

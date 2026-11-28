@@ -9,6 +9,7 @@ foreach ($name in @('TEMPORAL_FIXTURE_PASSWORD','COMPOSE_FILE','COMPOSE_PROFILES
     if (Test-Path "Env:$name") { throw "Unset $name before isolated acceptance." }
 }
 $compose = @('--project-name',$project,'--env-file',$envFile,'-f',(Join-Path $root 'compose/compose.temporal-acceptance.yaml'))
+$baseCompose = $compose
 $oldAddress = [Environment]::GetEnvironmentVariable('TEMPORAL_ADDRESS','Process')
 function Show-FixtureDiagnostics {
     Write-Host "Fixture diagnostics for $project (synthetic local environment)"
@@ -32,6 +33,8 @@ function Wait-Frontend {
             Write-Host 'PASS: internal Temporal namespace readiness'
             return
         }
+        $running = & docker compose @compose ps --status running -q temporal
+        if ($LASTEXITCODE -ne 0 -or -not $running) { throw 'Temporal server exited before readiness.' }
         if ($i -eq 0 -or ($i + 1) % 15 -eq 0) {
             Write-Host "Namespace probe attempt $($i + 1)/90 unsuccessful."
             $lastProbe | ForEach-Object { Write-Host ([string]$_) }
@@ -132,7 +135,10 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Temporal abrupt stop failed.' }
             & docker compose @compose kill -s SIGKILL postgres-temporal
             if ($LASTEXITCODE -ne 0) { throw 'Persistence abrupt stop failed.' }
-            & docker compose @compose up -d --wait
+            & docker compose @compose up -d --wait postgres-temporal
+            if ($LASTEXITCODE -ne 0) { throw 'Persistence crash restart failed.' }
+            $compose = $baseCompose + @('-f',(Join-Path $root 'compose/compose.temporal-acceptance-restart.yaml'))
+            & docker compose @compose up -d --no-deps --force-recreate temporal
             if ($LASTEXITCODE -ne 0) { throw 'Crash restart failed.' }
             Wait-Frontend
             Wait-HostFrontend
@@ -148,7 +154,10 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Temporal stop failed.' }
             & docker compose @compose restart postgres-temporal
             if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL restart failed.' }
-            & docker compose @compose up -d --wait
+            & docker compose @compose up -d --wait postgres-temporal
+            if ($LASTEXITCODE -ne 0) { throw 'Persistence restart readiness failed.' }
+            $compose = $baseCompose + @('-f',(Join-Path $root 'compose/compose.temporal-acceptance-restart.yaml'))
+            & docker compose @compose up -d --no-deps --force-recreate temporal
             if ($LASTEXITCODE -ne 0) { throw 'Restart readiness failed.' }
             Wait-Frontend
             Wait-HostFrontend
