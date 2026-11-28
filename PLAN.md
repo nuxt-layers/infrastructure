@@ -37,6 +37,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Verify controlled upgrade and published temporal-gateway contract; active worker-process crash, clean restart, abrupt server/database crash, heartbeat and worker/history acceptance passed. Never reuse PG16 volume unmodified.
 
 ## Phase 4 — Hosting environment
+- [x] Author fail-closed rendered production manifest policy checker and local VM/operator runbook; execution and actual provider controls pending.
 - [x] Author Linux host prerequisite/resource inspection and inactive private application database production candidate. No provisioning or operational acceptance claimed.
 - [ ] Provision production-representative local Linux VM using existing equipment, Coolify/Traefik, private networking, host security, resource budgets, secrets, UTC/NTP/NTS and qualified status.
 - [ ] Prepare Hetzner installation/production manifests without activating paid services; separate profiles, no dev credentials/override, exact provider assurance and region evidence.
@@ -50,6 +51,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
 ## Phase 6 — Supporting infrastructure
+- [x] Author isolated Pebble/Traefik ACME HTTP-01 issuance and certificate persistence fixture plus alias-header negative probe. Owner execution pending; automatic renewal not yet verified.
 - [x] Author opt-in advanced S3 presigned method/expiry, metadata and multipart completion/abort fixture; owner passed at 27f03bf on 28 November 2026, including presigned method/expiry denial, metadata roundtrip, multipart completion/abort and cleanup, baseline scope denial, SMTP and restart persistence. Existing baseline remains default.
 - [x] Author network-disabled Apache Jena OWL Micro/SHACL acceptance with checksum-verified distribution and bounded JDK container; owner acceptance passed at fc03485 using Apache Jena 6.3.0 with published SHA-512 verified and Java 21 image sha256:8ad118b146aa92da815b576441acd6b42b38236797ad0b6edc8c200b85bb0734. OWL Micro inference and positive/negative SHACL passed under network isolation; non-fatal Log4j hostname lookup error observed. Distribution signature, licence and production security review remain pending.
 - [x] Author actual Traefik file-provider multi-site TLS, forwarded-header and route withdrawal/reapplication acceptance; no Docker socket or ACME connection. Owner at 872968d passed initial TLS routes and forwarded-header protection on Traefik 3.8.0 (sha256:00c9734983e74ae35a1fc18eaee9e9da13f3dde95c4e45b3b8c3b60e0dbd2d17); withdrawal failed (stale route returned 200). Native Linux tmpfs route publication and corrected HTTP alias-header configuration: owner acceptance passed at 93fd39e for apply, withdraw, reapply, trusted TLS, forwarded-header boundary and cleanup. Alias-header-specific negative tests and Coolify/ACME remain outstanding.
@@ -62,6 +64,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Isolated Apache Jena bounded ontology/SHACL, selected processing/conditional collaboration and solver facilities; verify exact builds and licences.
 
 ## Phase 7 — Observability
+- [x] Author local resource pressure observation and optional bounded systemd polling unit. Owner execution, host IAM and actual alert delivery pending.
 - [x] Author root-only local resource/time observation CLI; unknown statuses retained for unverified authentication, backups and application readiness. Host IAM integration and alerts remain outstanding.
 - [ ] Bounded logs, resource metrics, qualified readiness/time quality, alerts and optional collection/tracing profiles.
 - [ ] Operator access exclusively explicitly authorised host super-admins; no tenant business browsing. Optional GUI never prerequisite for recovery.

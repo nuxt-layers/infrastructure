@@ -8,7 +8,7 @@ assert.ok(['apply','withdraw','reapply'].includes(phase));
 const ca=readFileSync(join(folder,'ca.pem'));
 const wrong=readFileSync(join(folder,'wrong.pem'));
 const call=(name,trust=ca)=>new Promise((resolve,reject)=>{
-    const req=request({hostname:'127.0.0.1',port:Number(endpoint.split(':')[1]),servername:name,ca:trust,agent:false,timeout:3000,headers:{host:name,'x-forwarded-host':'attacker.invalid','x-forwarded-proto':'http','x-forwarded-for':'203.0.113.42'}},res=>{
+    const req=request({hostname:'127.0.0.1',port:Number(endpoint.split(':')[1]),servername:name,minVersion:'TLSv1.2',ca:trust,agent:false,timeout:3000,headers:{host:name,'x-forwarded-host':'attacker.invalid','x-forwarded-proto':'http','x-forwarded-for':'203.0.113.42','x_forwarded_for':'203.0.113.43','x_fixture_identity':'spoofed'}},res=>{
         let body='';res.setEncoding('utf8');res.on('data',c=>{body+=c;if(body.length>16384)res.destroy(Error('oversized response'));});
         res.on('error',reject);res.on('end',()=>resolve({status:res.statusCode,body}));
     });
@@ -24,13 +24,14 @@ for(const site of ['site-a','site-b']){
     const expected=phase==='withdraw'&&site==='site-a'?404:200;
     const res=await wait(name,expected);
     if(expected===200){
-        const [marker,host,proto,forwarded]=res.body.trim().split('|');
+        const [marker,host,proto,forwarded,alias]=res.body.trim().split('|');
         assert.equal(marker,site);assert.equal(host,name);assert.equal(proto,'https');
-        assert.ok(forwarded&&!forwarded.includes('203.0.113.42'),'untrusted forwarded-for leaked');
+        assert.ok(forwarded&&!forwarded.includes('203.0.113.42')&&!forwarded.includes('203.0.113.43'),'untrusted forwarded-for leaked');
+        assert.equal(alias,'','alias header survived');
     }
 }
 if(phase==='apply'){
     await assert.rejects(()=>call('site-a.fixture.test',wrong));
     await assert.rejects(()=>call('unknown.fixture.test'));
 }
-console.log('PASS: Traefik route '+phase+', trusted TLS and forwarded-header boundary');
+console.log('PASS: Traefik route '+phase+', trusted TLS, alias and forwarded-header boundary');

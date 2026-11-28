@@ -47,7 +47,7 @@ try {
         foreach ($extension in @('crt','key')) {
             Copy-Item -LiteralPath (Join-Path $CertificateFolder "$site.fixture.test.$extension") -Destination $certs
         }
-        $conf = 'server { listen 80; location / { default_type text/plain; return 200 "SITE|$http_x_forwarded_host|$http_x_forwarded_proto|$http_x_forwarded_for"; } }'
+        $conf = 'server { underscores_in_headers on; listen 80; location / { default_type text/plain; return 200 "SITE|$http_x_forwarded_host|$http_x_forwarded_proto|$http_x_forwarded_for|$http_x_fixture_identity"; } }'
         $conf.Replace('SITE',$site) | Set-Content -Encoding utf8 (Join-Path $root "$site.conf")
     }
     @("TRAEFIK_FIXTURE_IMAGE=$TraefikImage","PROXY_FIXTURE_DIR=$($root.Replace('\','/'))") | Set-Content -Encoding utf8 $envFile

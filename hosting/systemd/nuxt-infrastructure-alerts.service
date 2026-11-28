@@ -1,0 +1,13 @@
+[Unit]
+Description=Infrastructure local resource observation
+[Service]
+Type=oneshot
+User=root
+ExecStart=/bin/bash /opt/nuxt-layers/infrastructure/hosting/host-alerts.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+TimeoutStartSec=30
+StandardOutput=journal
+StandardError=journal
