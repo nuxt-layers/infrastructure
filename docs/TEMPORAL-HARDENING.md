@@ -33,3 +33,5 @@ Owner run at `1ef9d0c`: trusted mutual TLS HTTP/2 and plaintext rejection passed
 Owner H2 acceptance PASSED 28 November 2026 at `1acdc14`: all transport controls, certificate negatives, JWT negatives, namespace and read-only authorisation, scoped worker execution and historical read, and disposal passed. Local fixture acceptance only; production gates remain.
 
 H3: run `./scripts/test-temporal-phase3.ps1 -Stage WorkerCrash`. Controller observes the exact persisted attempt-one heartbeat through DescribeWorkflowExecution, forcibly terminates the active worker process, starts a separate worker, checks attempt-two checkpoint recovery and exactly one completed activity in history. Owner execution pending.
+
+Owner H3 acceptance PASSED 28 November 2026 at `67e005a`: server-confirmed active attempt-one checkpoint, forced worker process termination, separate replacement worker recovered the checkpoint on attempt two, exactly one completed activity, graceful drain and complete fixture disposal. Execution schema 1.16, visibility 1.9, PostgreSQL 18 and pinned Temporal 1.27.2 images observed.
