@@ -22,3 +22,20 @@ Coolify local VM and external firewall probe; actual Stripe Sandbox account/conn
 ## Owner execution on the dedicated VM
 
 First run `scripts/test-host-policy.ps1` on the Windows development machine. It is a synthetic negative/positive policy fixture and does not provision a VM. On an existing, separately provisioned Linux VM with Docker, Compose, chrony, OpenSSH and Coolify installed, run `sudo bash hosting/verify-linux-host.sh` from the checked-out repository. Exit 2 indicates a failed local check; exit 3 indicates unresolved evidence (expected until external checks are complete). Do not treat a running Coolify container as proof of a deployed application. Use the external management client to verify permitted SSH/key access and denied unauthorised access, private DB ports and admin UI, deploy two disposable synthetic sites through Coolify, verify TLS, route isolation, revision change and rollback, remove both sites, and record the result. No actual VM or Coolify installation is asserted by this repository change. The example chrony configuration is not active and requires an approved source.
+
+
+## Staged local security provisioning
+
+The Windows WSL baseline was owner-verified with PowerShell 7.7.0 at 6a197b6 (script unchanged from ce0244e): firewall enabled, inbound Block, outbound Allow, loopback enabled, host policy merge disabled, no detected static NAT/portproxy mappings. This is not external reachability evidence.
+
+Keep Debian stopped until router IPv4/IPv6 ingress, UPnP, forwarding and DMZ are reviewed. For a controlled first boot, disconnect physical network access (including Wi-Fi, Ethernet and any mobile tether); retain local console access. Do not reconnect until the reviewed ingress guard and SSH policy are active and existing wildcard container bindings are remediated. Starting WSL can automatically start previously installed Docker and SSH services. Do not run an installer from the internet as root.
+
+- Windows elevated: scripts/setup-local.ps1 performs preflight only; it does not boot WSL.
+- In the isolated Debian console, identify interfaces and active services using hosting/inspect-local-security.sh. Review actual external interface name, systemd startup, Docker service flags, installed Coolify Compose layout and key ownership before applying.
+- hosting/setup-network-guard.sh local --check <interface> validates candidate nftables rules. --apply changes the live firewall and installs service ordering; console-only and subject to reviewed recovery access. It protects the identified interface, not every possible future interface.
+- hosting/setup-ssh.sh --check and hosting/setup-docker.sh --check validate candidates. Apply SSH only after reviewing authorised keys and Match contexts. Apply Docker only after graceful stop of both daemon and socket; existing containers/networks are not changed.
+- hosting/setup-coolify.sh --check renders a candidate persistent custom override against existing source files. --apply stages it only; no recreation or pull. Existing custom files, separate proxy Compose files and alternate layouts require review. Do not automatically upgrade or enable public domains, tunnels or webhooks.
+- Before reconnecting, review actual service launch and recreate existing wildcard bindings under guard with exact reviewed image versions, preserving volumes. Verify with hosting/verify-docker-local.sh. Run off-host IPv4/IPv6 negative probes, including after restart and deployment. No external isolation claim from static checks.
+- Production hosting/setup-hetzner.sh --check <interface> is intentionally preflight-only and exits 3 pending owner approval, provider firewall and private management access. It cannot provision or activate paid resources.
+
+Rollback must be performed from local console with physical uplinks disconnected. Retain Docker original configuration at /etc/nuxt-infrastructure/daemon.json.original if present, retain existing Coolify source and volumes, and never remove the ingress guard while potentially exposed services are running. No production activation or full provisioning completion is claimed by this staged implementation.
