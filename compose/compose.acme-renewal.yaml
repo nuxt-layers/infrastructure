@@ -1,0 +1,21 @@
+# Disposable local renewal only; no public ACME.
+services:
+  pebble:
+    command: ["-config", "/fixture/pebble-renewal.json"]
+    volumes:
+      - "${ACME_FIXTURE_DIR:?Required}:/fixture:ro"
+  proxy:
+    command:
+      - --log.level=INFO
+      - --entrypoints.web.address=:5002
+      - --entrypoints.websecure.address=:8443
+      - --providers.file.filename=/fixture/routes.yaml
+      - --certificatesresolvers.local.acme.caserver=https://pebble:14000/dir
+      - --certificatesresolvers.local.acme.caservername=localhost
+      - --certificatesresolvers.local.acme.cacertificates=/fixture/pebble.minica.pem
+      - --certificatesresolvers.local.acme.storage=/state/acme.json
+      - --certificatesresolvers.local.acme.httpchallenge.entrypoint=web
+      - --global.checknewversion=false
+      - --global.sendanonymoususage=false
+      - --api=false
+      - --certificatesresolvers.local.acme.certificatesduration=1

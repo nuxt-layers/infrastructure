@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9./:_-]+@sha256:[a-f0-9]{64}$')][string]$PebbleImage,
-    [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9./:_-]+@sha256:[a-f0-9]{64}$')][string]$TraefikImage
+    [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9./:_-]+@sha256:[a-f0-9]{64}$')][string]$TraefikImage,
+    [switch]$Renewal
 )
 $ErrorActionPreference='Stop'
 $PSNativeCommandUseErrorActionPreference=$false
@@ -12,6 +13,7 @@ $project='nl-acme-'+[guid]::NewGuid().ToString('N').Substring(0,12)
 $folder=Join-Path ([IO.Path]::GetTempPath()) $project
 $envFile=Join-Path $folder 'fixture.env'
 $compose=@('--project-name',$project,'--env-file',$envFile,'-f',(Join-Path $PSScriptRoot '../compose/compose.acme.yaml'))
+if ($Renewal) { $compose += @('-f',(Join-Path $PSScriptRoot '../compose/compose.acme-renewal.yaml')) }
 function Dc {
     & docker compose @compose @args
     if ($LASTEXITCODE -ne 0) { throw "ACME compose command failed: $($args[0])" }
@@ -20,6 +22,7 @@ try {
     New-Item -ItemType Directory $folder | Out-Null
     Copy-Item (Join-Path $PSScriptRoot '../tests/site-hosting/acme-routes.yaml') (Join-Path $folder 'routes.yaml')
     @("PEBBLE_IMAGE=$PebbleImage","TRAEFIK_IMAGE=$TraefikImage","ACME_FIXTURE_DIR=$($folder.Replace('\','/'))") | Set-Content -Encoding utf8 $envFile
+    if ($Renewal) { Copy-Item (Join-Path $PSScriptRoot '../tests/site-hosting/pebble-renewal.json') (Join-Path $folder 'pebble-renewal.json') }
     Dc up -d pebble
     $id=(Dc ps -q pebble | Out-String).Trim()
     & docker cp "${id}:/test/certs/pebble.minica.pem" (Join-Path $folder 'pebble.minica.pem')
@@ -34,6 +37,18 @@ try {
     # The management bootstrap uses an isolated loopback fixture only; ACME client and issued TLS are verified.
     Dc up -d proxy site
     $endpoint=(Dc port proxy 8443 | Out-String).Trim()
+    if ($Renewal) {
+        $proxyBefore = (Dc ps -q proxy | Out-String).Trim()
+        $startedBefore = (& docker inspect --format '{{.State.StartedAt}}' $proxyBefore | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or -not $startedBefore) { throw 'Proxy start evidence unavailable.' }
+        & node (Join-Path $PSScriptRoot '../tests/site-hosting/acme-renewal.mjs') $endpoint $rootCa
+        if ($LASTEXITCODE -ne 0) { throw 'Automatic renewal failed.' }
+        $proxyAfter = (Dc ps -q proxy | Out-String).Trim()
+        $startedAfter = (& docker inspect --format '{{.State.StartedAt}}' $proxyAfter | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or $proxyBefore -ne $proxyAfter -or $startedBefore -ne $startedAfter) { throw 'Proxy restarted during renewal.' }
+        Write-Host 'PASS: automatic renewal without proxy restart or recreation.'
+        return
+    }
     $serials=@(& node (Join-Path $PSScriptRoot '../tests/site-hosting/acme-acceptance.mjs') $endpoint $rootCa)
     if ($LASTEXITCODE -ne 0 -or $serials.Count -ne 2) { throw 'ACME issuance failed.' }
     Write-Host 'PASS: initial ACME issuance and trusted HTTPS for both sites.'
