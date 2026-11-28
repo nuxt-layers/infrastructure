@@ -45,7 +45,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
 ## Phase 6 — Supporting infrastructure
-- [x] Author SeaweedFS scoped bucket negative tests and restart persistence fixture; owner run at 7702130 stopped before assertions because loopback port discovery failed; bridge/publishing correction pending rerun. Image digests resolved: SeaweedFS 7ca46aeae2f223b37e5d91593c17ab37738eec6df6ab69b48a0487f7643342b9, Mailpit 23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e (release/security review pending).
+- [x] Author SeaweedFS scoped bucket negative tests and restart persistence fixture; owner run at 7702130 stopped before assertions because loopback port discovery failed; bridge/publishing correction enabled endpoint discovery; be16fab owner rerun reached Node but timed out before acceptance; explicit HTTP framing, bounded volume size and failure diagnostics authored; rerun pending. Image digests resolved: SeaweedFS 7ca46aeae2f223b37e5d91593c17ab37738eec6df6ab69b48a0487f7643342b9, Mailpit 23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e (release/security review pending).
 - [ ] SeaweedFS single-node local S3, repeatable buckets/credentials and same Storage adapter tests; Hetzner S3 configuration only.
 - [x] Owner reported OIDC, HTTP fault simulation, DNS and local TLS acceptance passed at baseline 9e8be93; exact commands/evidence remain in the fixture references. No Coolify or ACME acceptance implied.
 - [ ] Local DNS/CA/ACME and Site Hosting multi-site route/TLS reconciliation.

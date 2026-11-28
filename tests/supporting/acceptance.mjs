@@ -1,10 +1,32 @@
 import { createHash, createHmac } from 'node:crypto';
 import { createConnection } from 'node:net';
+import { request as httpRequest } from 'node:http';
 import assert from 'node:assert/strict';
 const [s3, mail, smtp, access, secret, tenantAccess, tenantSecret, mode] = process.argv.slice(2);
 for (const address of [s3,mail,smtp]) assert.match(address, /^127\.0\.0\.1:\d+$/);
 const hash = data => createHash('sha256').update(data).digest('hex');
 const hmac = (key,data) => createHmac('sha256',key).update(data).digest();
+// Explicit body framing and full response consumption; no implicit connection pooling.
+function exchange(endpoint,method,path,headers={},body='') {
+  return new Promise((resolve,reject)=>{
+    const req=httpRequest('http://'+endpoint+path,{
+      method,agent:false,headers:{...headers,...(method==='PUT'?{'content-length':Buffer.byteLength(body)}:{})},
+      signal:AbortSignal.timeout(30000)
+    },res=>{
+      const chunks=[];
+      let size=0;
+      res.on('data',chunk=>{size+=chunk.length;if(size>1048576){res.destroy(new Error('Response exceeds fixture limit'));return;}chunks.push(chunk);});
+      res.on('error',reject);
+      res.on('aborted',()=>reject(new Error('Response aborted')));
+      res.on('end',()=>{
+        const value=Buffer.concat(chunks).toString('utf8');
+        resolve({status:res.statusCode,ok:res.statusCode>=200&&res.statusCode<300,text:async()=>value,json:async()=>JSON.parse(value)});
+      });
+    });
+    req.on('error',reject);
+    req.end(method==='PUT'?body:undefined);
+  }).catch(error=>{throw new Error(method+' '+path+' at '+endpoint+' failed: '+error.message,{cause:error});});
+}
 async function request(method,path,body='',key=secret, identity=access) {
   const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g,'');
   const day = date.slice(0,8);
@@ -15,14 +37,17 @@ async function request(method,path,body='',key=secret, identity=access) {
   const scope = day+'/us-east-1/s3/aws4_request';
   const signing = hmac(hmac(hmac(hmac('AWS4'+key,day),'us-east-1'),'s3'),'aws4_request');
   headers.authorization = 'AWS4-HMAC-SHA256 Credential='+identity+'/'+scope+', SignedHeaders='+signed+', Signature='+hmac(signing,['AWS4-HMAC-SHA256',date,scope,hash(canonical)].join('\n')).toString('hex');
-  return fetch('http://'+s3+path,{method,headers,...(method==='PUT'?{body}:{}),signal:AbortSignal.timeout(5000)});
+  const response=await exchange(s3,method,path,headers,body);
+  console.log('S3 '+method+' '+path+' -> '+response.status);
+  return response;
 }
-async function ready(fn) {
-  for(let i=0;i<30;i++){try{if(await fn())return;}catch{} await new Promise(r=>setTimeout(r,1000));}
-  throw new Error('Fixture readiness timeout');
+async function ready(label,fn) {
+  const deadline=Date.now()+90000;let last;
+  do {try{if(await fn())return;last='unexpected response';}catch(error){last=error.message;}await new Promise(r=>setTimeout(r,1000));}while(Date.now()<deadline);
+  throw new Error(label+' readiness timeout: '+last);
 }
-await ready(async()=> (await request('GET','/')).ok);
-await ready(async()=> (await fetch('http://'+mail+'/api/v1/messages',{signal:AbortSignal.timeout(3000)})).ok);
+await ready('S3',async()=> (await request('GET','/')).ok);
+await ready('Mailpit',async()=> (await exchange(mail,'GET','/api/v1/messages')).ok);
 const bucket='/infra-fixture';
 const restricted=(method,path,body='')=>request(method,path,body,tenantSecret,tenantAccess);
 if(mode==='--after-restart') {
@@ -40,7 +65,7 @@ assert.equal((await request('PUT',path,payload)).ok,true);
 assert.equal(await (await request('GET',path)).text(),payload);
 assert.equal((await request('HEAD',path)).ok,true);
 assert.equal((await request('GET',path,'','invalid')).status,403);
-assert.equal((await fetch('http://'+s3+path,{signal:AbortSignal.timeout(5000)})).status,403);
+assert.equal((await exchange(s3,'GET',path)).status,403);
 assert.equal((await request('GET',bucket)).ok,true);
 assert.equal((await request('DELETE',path)).ok,true);
 assert.equal((await request('GET',path)).status,404);
@@ -67,5 +92,5 @@ socket.on('error',e=>{failure=e;});
 async function reply(code){const until=Date.now()+5000;while(Date.now()<until){if(failure)throw failure;while(lines.length){const line=lines.shift();if(/^\d{3} /.test(line)){assert.equal(Number(line.slice(0,3)),code);return;}}await new Promise(r=>setTimeout(r,20));}throw new Error('SMTP timeout');}
 async function send(line,code){socket.write(line+'\r\n');await reply(code);}
 try{await reply(220);await send('EHLO fixture.invalid',250);await send('MAIL FROM:<sender@fixture.invalid>',250);await send('RCPT TO:<recipient@fixture.invalid>',250);await send('DATA',354);await send('From: sender@fixture.invalid\r\nTo: recipient@fixture.invalid\r\nSubject: Infrastructure fixture\r\n\r\nSynthetic message\r\n.',250);await send('QUIT',221);}finally{socket.destroy();}
-await ready(async()=>{const response=await fetch('http://'+mail+'/api/v1/messages',{signal:AbortSignal.timeout(3000)});const data=await response.json();return data.messages?.some(m=>m.Subject==='Infrastructure fixture');});
+await ready('SMTP capture',async()=>{const response=await exchange(mail,'GET','/api/v1/messages');const data=await response.json();return data.messages?.some(m=>m.Subject==='Infrastructure fixture');});
 console.log('PASS: SMTP delivery captured locally');

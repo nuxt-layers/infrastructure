@@ -46,6 +46,14 @@ try {
     $s3 = Get-Endpoint seaweedfs 8333
     & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret --after-restart
     if ($LASTEXITCODE -ne 0) { throw 'Supporting restart acceptance failed.' }
+} catch {
+    if (Test-Path $envFile) {
+        & docker compose @compose ps | Out-Host
+        & docker compose @compose logs --no-color --tail 80 2>&1 | ForEach-Object {
+            ([string]$_).Replace($access,'[redacted]').Replace($secret,'[redacted]').Replace($tenantAccess,'[redacted]').Replace($tenantSecret,'[redacted]')
+        } | Out-Host
+    }
+    throw
 } finally {
     if (Test-Path $envFile) {
         & docker compose @compose down --volumes --remove-orphans
