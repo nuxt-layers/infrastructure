@@ -36,14 +36,36 @@ try {
     $endpoint=(Dc port proxy 8443 | Out-String).Trim()
     $serials=@(& node (Join-Path $PSScriptRoot '../tests/site-hosting/acme-acceptance.mjs') $endpoint $rootCa)
     if ($LASTEXITCODE -ne 0 -or $serials.Count -ne 2) { throw 'ACME issuance failed.' }
-    Dc restart proxy
+    Write-Host 'PASS: initial ACME issuance and trusted HTTPS for both sites.'
+    # Traefik writes ACME state asynchronously; wait for both certificate entries
+    # without exposing account keys or certificate private keys in console output.
+    $persisted = $false
+    for ($i=0; $i -lt 30; $i++) {
+        $state = & docker compose @compose exec -T proxy sh -ec 'test -s /state/acme.json && cat /state/acme.json' 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            try {
+                $saved = ($state | Out-String | ConvertFrom-Json).local.Certificates
+                $domains = @($saved | ForEach-Object { $_.domain.main })
+                if ($domains -contains 'site-a.fixture.test' -and $domains -contains 'site-b.fixture.test') { $persisted = $true; break }
+            } catch { }
+        }
+        Start-Sleep -Seconds 1
+    }
+    Remove-Variable state,saved -ErrorAction SilentlyContinue
+    if (-not $persisted) { throw 'ACME state did not persist both issued certificates before restart.' }
+    # Recreate instead of restarting, ensuring the named volume is the durable source.
+    Dc up -d --no-deps --force-recreate proxy
+    # Docker can assign a new ephemeral host port on restart/recreation.
+    $endpoint = (Dc port proxy 8443 | Out-String).Trim()
+    if ($endpoint -notmatch '^127\.0\.0\.1:\d+$') { throw 'Recreated proxy must publish a loopback endpoint.' }
+    Write-Host "Recreated proxy endpoint: $endpoint"
     & node (Join-Path $PSScriptRoot '../tests/site-hosting/acme-acceptance.mjs') $endpoint $rootCa @serials
     if ($LASTEXITCODE -ne 0) { throw 'ACME certificate persistence failed.' }
     Write-Host 'PASS: local ACME HTTP-01 issuance, trusted multi-site TLS, unknown SNI denial and persisted certificates across restart.'
 } catch {
-    if (Test-Path $envFile) { & docker compose @compose logs --tail 40 }
+    if (Test-Path $envFile) { & docker compose @compose logs --tail 100 proxy pebble }
     throw
 } finally {
-    if (Test-Path $envFile) { & docker compose @compose down --volumes --remove-orphans }
+    if (Test-Path $envFile) { & docker compose @compose down --volumes --remove-orphans; if ($LASTEXITCODE -ne 0) { throw 'ACME fixture cleanup failed.' } }
     if (Test-Path $folder) { Remove-Item -LiteralPath $folder -Recurse -Force }
 }

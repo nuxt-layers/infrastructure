@@ -11,9 +11,13 @@ const probe=name=>new Promise((resolve,reject)=>{
   req.on('error',reject);req.on('timeout',()=>req.destroy(Error('timeout')));req.end();
 });
 for(const [i,name] of ['site-a.fixture.test','site-b.fixture.test'].entries()){
-  let result;const until=Date.now()+120000;
-  while(Date.now()<until){try{result=await probe(name);if(result.status===200)break;}catch{}await new Promise(r=>setTimeout(r,1000));}
-  assert.equal(result?.status,200,'Trusted issued certificate unavailable: '+name);
+  let result,lastError;const until=Date.now()+120000;
+  while(Date.now()<until){
+    try{result=await probe(name);if(result.status===200)break;}
+    catch(error){lastError=error.code??error.message;}
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  assert.equal(result?.status,200,'Trusted issued certificate unavailable: '+name+' at '+endpoint+'; last error: '+(lastError??'none'));
   assert.ok(result.san.includes('DNS:'+name)&&result.serial);
   if(previous.length)assert.equal(result.serial,previous[i],'Certificate changed across proxy restart');
   console.log(result.serial);

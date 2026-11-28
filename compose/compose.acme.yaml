@@ -15,6 +15,7 @@ services:
   proxy:
     image: ${TRAEFIK_IMAGE:?Digest-qualified Traefik required}
     command:
+      - --log.level=INFO
       - --entrypoints.web.address=:5002
       - --entrypoints.websecure.address=:8443
       - --providers.file.filename=/fixture/routes.yaml
