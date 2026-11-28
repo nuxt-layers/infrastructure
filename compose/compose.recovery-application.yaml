@@ -1,0 +1,15 @@
+# Overlay only on the disposable recovery project.
+services:
+  database:
+    build: &application
+      dockerfile: Dockerfile.application
+      args:
+        APPLICATION_BASE: ${RECOVERY_APPLICATION_BASE:?Required local extended image}
+    command: ["postgres","-c","shared_preload_libraries=pg_textsearch,pg_cron","-c","cron.database_name=postgres","-c","archive_mode=on","-c","archive_command=pgbackrest --stanza=fixture archive-push %p","-c","archive_timeout=10s"]
+  prepare:
+    build: *application
+  restore:
+    build: *application
+  recovered:
+    build: *application
+    command: ["postgres","-c","shared_preload_libraries=pg_textsearch,pg_cron","-c","cron.database_name=postgres","-c","archive_mode=off","-c","restore_command=pgbackrest --stanza=fixture archive-get %f %p"]

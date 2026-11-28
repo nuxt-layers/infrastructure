@@ -8,6 +8,7 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [x] Phase 1 PRs #6 (architecture) and #7 (infrastructure) merged; no operational acceptance claimed.
 
 ## Phase 2 — PostgreSQL
+- [x] Capture complete builder and runtime dpkg package inventories in newly built extended image; rebuild and provenance review pending.
 - [x] Existing PostgreSQL 18 application image, AGE/pg_textsearch/PGMQ/pg_cron build/enable definitions, PowerShell start/stop/verify/reset, functional smoke fixtures (PR #3).
 - [x] Author pg_trgm enablement, optional pgvector image support and immutable checks for AGE/pg_textsearch/PGMQ/pgvector.
 - [x] Author configurable digest-qualified base/exact cron package inputs, runtime build evidence and controlled upgrade procedure.
@@ -36,21 +37,32 @@ Authority: [nuxt-layers/architecture](https://github.com/nuxt-layers/architectur
 - [ ] Verify controlled upgrade and published temporal-gateway contract; active worker-process crash, clean restart, abrupt server/database crash, heartbeat and worker/history acceptance passed. Never reuse PG16 volume unmodified.
 
 ## Phase 4 — Hosting environment
+- [x] Author Linux host prerequisite/resource inspection and inactive private application database production candidate. No provisioning or operational acceptance claimed.
 - [ ] Provision production-representative local Linux VM using existing equipment, Coolify/Traefik, private networking, host security, resource budgets, secrets, UTC/NTP/NTS and qualified status.
 - [ ] Prepare Hetzner installation/production manifests without activating paid services; separate profiles, no dev credentials/override, exact provider assurance and region evidence.
 - [ ] Crypto inventory, approved profiles and negative isolation parity; capacity and no-cost verification.
 
 ## Phase 5 — Recovery
+- [x] Author dedicated Temporal hardened cluster backup/PITR and real suspended-workflow restore acceptance; owner execution pending. Independent disposable repository and restore volume; no production backup custody claim.
+- [x] Author separate extended application image PITR overlay, extension catalogue and trigram restore query. Owner execution pending.
+- [x] Author bounded generic PITR fixture, observed restore duration and encrypted restic wrong-password refusal. Owner restic acceptance passed at 872968d (image sha256:c907f4b76cf63e41517573a37b0319ff78b83db524aac3401a1cf54521d8f2a4, integrity, incorrect password refusal, exact restored hash, 1.2492453s observed restore); generic PITR owner acceptance passed at eb52007 with pgBackRest 2.60.1-1.pgdg12+1, encrypted full backup, named WAL recovery point preceding destructive transaction, independent restore volume, 8.7645416s observed recovery and cleanup. Non-fatal root group mapping warning requires production ownership review. Application/Temporal-specific recovery remains unverified.
 - [ ] pgBackRest separate app/Temporal DB backup/PITR; restic file/config/eligible volumes, separate protected target, no live DB directory copying or application S3 backup target.
 - [ ] Independent recovery scripts, RPO/RTO, restore tests, crash recovery, cache rebuild, erasure replay, key recovery; evidence and runbooks.
 
 ## Phase 6 — Supporting infrastructure
+- [x] Author opt-in advanced S3 presigned method/expiry, metadata and multipart completion/abort fixture; owner execution pending. Existing baseline remains default.
+- [x] Author network-disabled Apache Jena OWL Micro/SHACL acceptance with checksum-verified distribution and bounded JDK container; owner acceptance passed at fc03485 using Apache Jena 6.3.0 with published SHA-512 verified and Java 21 image sha256:8ad118b146aa92da815b576441acd6b42b38236797ad0b6edc8c200b85bb0734. OWL Micro inference and positive/negative SHACL passed under network isolation; non-fatal Log4j hostname lookup error observed. Distribution signature, licence and production security review remain pending.
+- [x] Author actual Traefik file-provider multi-site TLS, forwarded-header and route withdrawal/reapplication acceptance; no Docker socket or ACME connection. Owner at 872968d passed initial TLS routes and forwarded-header protection on Traefik 3.8.0 (sha256:00c9734983e74ae35a1fc18eaee9e9da13f3dde95c4e45b3b8c3b60e0dbd2d17); withdrawal failed (stale route returned 200). Native Linux tmpfs route publication and corrected HTTP alias-header configuration: owner acceptance passed at 93fd39e for apply, withdraw, reapply, trusted TLS, forwarded-header boundary and cleanup. Alias-header-specific negative tests and Coolify/ACME remain outstanding.
+- [x] Author offline payment lifecycle, merchant isolation, idempotency and signed callback model fixture. Owner acceptance passed at bbc161a: offline transitions, merchant scope, idempotency and callback replay/tamper/expiry. Not Stripe interoperability or connector acceptance.
+- [x] Owner acceptance passed at 9f422b7: signed S3 CRUD, invalid/anonymous rejection, authorised bucket read/write, explicit cross-bucket read/list/write/delete denial, unchanged protected object and absent denied write, SMTP capture, restart persistence and cleanup. SeaweedFS digest 7ca46aeae2f223b37e5d91593c17ab37738eec6df6ab69b48a0487f7643342b9; Mailpit digest 23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e. Exact release/security review, adapter parity and remaining S3 gates pending.
 - [ ] SeaweedFS single-node local S3, repeatable buckets/credentials and same Storage adapter tests; Hetzner S3 configuration only.
+- [x] Owner reported OIDC, HTTP fault simulation, DNS and local TLS acceptance passed at baseline 9e8be93; exact commands/evidence remain in the fixture references. No Coolify or ACME acceptance implied.
 - [ ] Local DNS/CA/ACME and Site Hosting multi-site route/TLS reconciliation.
 - [ ] SMTP/OIDC/API/fault fixtures, Stripe sandbox and offline simulator; connector implementation coordinated with artefact owners.
 - [ ] Isolated Apache Jena bounded ontology/SHACL, selected processing/conditional collaboration and solver facilities; verify exact builds and licences.
 
 ## Phase 7 — Observability
+- [x] Author root-only local resource/time observation CLI; unknown statuses retained for unverified authentication, backups and application readiness. Host IAM integration and alerts remain outstanding.
 - [ ] Bounded logs, resource metrics, qualified readiness/time quality, alerts and optional collection/tracing profiles.
 - [ ] Operator access exclusively explicitly authorised host super-admins; no tenant business browsing. Optional GUI never prerequisite for recovery.
 

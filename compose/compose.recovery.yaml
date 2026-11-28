@@ -1,0 +1,82 @@
+services:
+  database:
+    build:
+      context: ../recovery/postgres
+      args:
+        PGBACKREST_VERSION: ${PGBACKREST_VERSION:?Exact package version required}
+    environment:
+      POSTGRES_PASSWORD: ${RECOVERY_DB_SECRET:?Required}
+      PGBACKREST_REPO1_CIPHER_PASS: ${RECOVERY_REPO_SECRET:?Required}
+    command: ["postgres", "-c", "archive_mode=on", "-c", "archive_command=pgbackrest --stanza=fixture archive-push %p", "-c", "archive_timeout=10s"]
+    volumes:
+      - database:/var/lib/postgresql
+      - backup:/backup
+    networks: [private]
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
+    logging: &logs
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  prepare:
+    build:
+      context: ../recovery/postgres
+      args:
+        PGBACKREST_VERSION: ${PGBACKREST_VERSION:?Exact package version required}
+    user: "0:0"
+    entrypoint: ["/bin/sh","-ec"]
+    command: ["chown postgres:postgres /backup /restore; chmod 700 /backup /restore"]
+    volumes:
+      - backup:/backup
+      - restored:/restore
+    network_mode: none
+    profiles: [tools]
+  restore:
+    build:
+      context: ../recovery/postgres
+      args:
+        PGBACKREST_VERSION: ${PGBACKREST_VERSION:?Exact package version required}
+    user: postgres
+    entrypoint: ["pgbackrest"]
+    environment:
+      PGBACKREST_REPO1_CIPHER_PASS: ${RECOVERY_REPO_SECRET:?Required}
+    volumes:
+      - backup:/backup:ro
+      - restored:/var/lib/postgresql/18/docker
+    network_mode: none
+    profiles: [tools]
+  recovered:
+    build:
+      context: ../recovery/postgres
+      args:
+        PGBACKREST_VERSION: ${PGBACKREST_VERSION:?Exact package version required}
+    environment:
+      PGBACKREST_REPO1_CIPHER_PASS: ${RECOVERY_REPO_SECRET:?Required}
+      POSTGRES_PASSWORD: ${RECOVERY_DB_SECRET:?Required}
+    command: ["postgres","-c","archive_mode=off","-c","restore_command=pgbackrest --stanza=fixture archive-get %f %p"]
+    volumes:
+      - restored:/var/lib/postgresql/18/docker
+      - backup:/backup:ro
+    networks: [private]
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    profiles: [tools]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
+    logging: *logs
+networks:
+  private:
+    internal: true
+volumes:
+  database: {}
+  backup: {}
+  restored: {}

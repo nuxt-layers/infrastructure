@@ -1,0 +1,32 @@
+# Inactive production candidate; never use a development override.
+services:
+  postgres-app:
+    image: ${APP_POSTGRES_IMAGE:?Reviewed immutable application database image required}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${APP_POSTGRES_BOOTSTRAP_USER:?Required}
+      POSTGRES_PASSWORD_FILE: /run/secrets/app_bootstrap
+      POSTGRES_DB: ${APP_POSTGRES_DB:?Required}
+    command: ["postgres","-c","shared_preload_libraries=pg_textsearch,pg_cron","-c","cron.database_name=postgres","-c","cron.use_background_workers=on"]
+    secrets: [app_bootstrap]
+    volumes: [app_data:/var/lib/postgresql]
+    networks: [app_db]
+    mem_limit: ${APP_DB_MEMORY:?Required}
+    cpus: ${APP_DB_CPUS:?Required}
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+networks:
+  app_db:
+    internal: true
+volumes:
+  app_data: {}
+secrets:
+  app_bootstrap:
+    file: ${APP_POSTGRES_BOOTSTRAP_FILE:?Required}
