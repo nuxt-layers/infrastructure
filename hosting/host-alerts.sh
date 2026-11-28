@@ -3,9 +3,9 @@
 set -euo pipefail
 export LC_ALL=C
 [[ $(id -u) = 0 ]] || { echo 'Operator authorisation required' >&2; exit 3; }
-disk_limit=DISK_LIMIT_PERCENT:-85
-memory_limit=MEMORY_LIMIT_PERCENT:-90
-for value in "$disk_limit" "$memory_limit"; do [[ "$value" =~ ^[0-9]{1,2}$ && "$value" -gt 0 ]] || exit 3; done
+disk_limit=${DISK_LIMIT_PERCENT:-85}
+memory_limit=${MEMORY_LIMIT_PERCENT:-90}
+for value in "$disk_limit" "$memory_limit"; do [[ "$value" =~ ^[0-9]{1,2}$ && "$value" =~ ^[1-9][0-9]?$ ]] || exit 3; done
 status=0
 emit(){ printf '%s %s %s\n' "$(date -u +%FT%TZ)" "$1" "$2"; }
 disk=$(df -Pk / | awk 'NR==2 {gsub(/%/,"",$5);print $5}')
