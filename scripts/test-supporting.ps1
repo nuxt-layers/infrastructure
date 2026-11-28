@@ -27,9 +27,52 @@ try {
     & docker compose @compose up -d
     if ($LASTEXITCODE -ne 0) { throw 'Supporting fixture startup failed.' }
     function Get-Endpoint([string]$service,[int]$port) {
-        $endpoint = (& docker compose @compose port $service $port | Out-String).Trim()
-        if ($LASTEXITCODE -ne 0 -or $endpoint -notmatch '^127\.0\.0\.1:\d+$') { throw 'Non-loopback endpoint.' }
-        return $endpoint
+        for ($attempt = 0; $attempt -lt 15; $attempt++) {
+            $endpoint = (& docker compose @compose port $service $port | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and $endpoint -match '^127\.0\.0\.1:\d+
+    }
+    $s3 = Get-Endpoint seaweedfs 8333
+    $mail = Get-Endpoint mailpit 8025
+    $smtp = Get-Endpoint mailpit 1025
+    & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret
+    if ($LASTEXITCODE -ne 0) { throw 'Supporting acceptance failed.' }
+    & docker compose @compose restart seaweedfs
+    if ($LASTEXITCODE -ne 0) { throw 'SeaweedFS restart failed.' }
+    $s3 = Get-Endpoint seaweedfs 8333
+    & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret --after-restart
+    if ($LASTEXITCODE -ne 0) { throw 'Supporting restart acceptance failed.' }
+} finally {
+    if (Test-Path $envFile) {
+        & docker compose @compose down --volumes --remove-orphans
+        if ($LASTEXITCODE -ne 0) { Write-Warning "Cleanup failed for $project" }
+    }
+    Remove-Item -LiteralPath $folder -Recurse -Force
+}
+) { return $endpoint }
+            if ($endpoint -and $endpoint -notmatch '^127\.0\.0\.1:\d+
+    }
+    $s3 = Get-Endpoint seaweedfs 8333
+    $mail = Get-Endpoint mailpit 8025
+    $smtp = Get-Endpoint mailpit 1025
+    & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret
+    if ($LASTEXITCODE -ne 0) { throw 'Supporting acceptance failed.' }
+    & docker compose @compose restart seaweedfs
+    if ($LASTEXITCODE -ne 0) { throw 'SeaweedFS restart failed.' }
+    $s3 = Get-Endpoint seaweedfs 8333
+    & node (Join-Path $root 'tests/supporting/acceptance.mjs') $s3 $mail $smtp $access $secret $tenantAccess $tenantSecret --after-restart
+    if ($LASTEXITCODE -ne 0) { throw 'Supporting restart acceptance failed.' }
+} finally {
+    if (Test-Path $envFile) {
+        & docker compose @compose down --volumes --remove-orphans
+        if ($LASTEXITCODE -ne 0) { Write-Warning "Cleanup failed for $project" }
+    }
+    Remove-Item -LiteralPath $folder -Recurse -Force
+}
+) { throw "Unsafe published endpoint for ${service}:${port}: $endpoint" }
+            Start-Sleep -Seconds 1
+        }
+        & docker compose @compose ps
+        throw "No loopback port published for ${service}:${port}."
     }
     $s3 = Get-Endpoint seaweedfs 8333
     $mail = Get-Endpoint mailpit 8025

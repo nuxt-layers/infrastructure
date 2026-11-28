@@ -26,6 +26,8 @@ services:
     logging: *bounded
 networks:
   fixture:
-    internal: true
+    # Host-side acceptance requires published loopback ports; internal-only
+    # networks can suppress port publishing. This disposable bridge permits egress.
+    driver: bridge
 volumes:
   object_data: {}
