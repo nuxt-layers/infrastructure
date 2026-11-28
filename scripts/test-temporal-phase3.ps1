@@ -10,12 +10,36 @@ foreach ($name in @('TEMPORAL_FIXTURE_PASSWORD','COMPOSE_FILE','COMPOSE_PROFILES
 }
 $compose = @('--project-name',$project,'--env-file',$envFile,'-f',(Join-Path $root 'compose/compose.temporal-acceptance.yaml'))
 $oldAddress = [Environment]::GetEnvironmentVariable('TEMPORAL_ADDRESS','Process')
+function Show-FixtureDiagnostics {
+    Write-Host "Fixture diagnostics for $project (synthetic local environment)"
+    & docker compose @compose ps -a
+    # Print selected operational logs only; redact the generated fixture secret.
+    $secretLine = Get-Content -LiteralPath $envFile | Where-Object { $_ -like 'TEMPORAL_FIXTURE_PASSWORD=*' } | Select-Object -First 1
+    $secret = ($secretLine -split '=',2)[1]
+    $logs = & docker compose @compose logs --no-color --tail 100 temporal postgres-temporal 2>&1
+    foreach ($line in $logs) {
+        $message = [string]$line
+        if ($secret) { $message = $message.Replace($secret,'[REDACTED]') }
+        Write-Host $message
+    }
+}
 function Wait-Frontend {
+    Write-Host 'Waiting for Temporal namespace readiness inside the fixture...'
+    $lastProbe = @()
     for ($i=0; $i -lt 90; $i++) {
-        & docker compose @compose exec -T temporal tctl --address temporal:7233 namespace describe default *> $null
-        if ($LASTEXITCODE -eq 0) { return }
+        $lastProbe = & docker compose @compose exec -T temporal tctl --address temporal:7233 namespace describe default 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host 'PASS: internal Temporal namespace readiness'
+            return
+        }
+        if ($i -eq 0 -or ($i + 1) % 15 -eq 0) {
+            Write-Host "Namespace probe attempt $($i + 1)/90 unsuccessful."
+            $lastProbe | ForEach-Object { Write-Host ([string]$_) }
+        }
         Start-Sleep -Seconds 2
     }
+    Write-Host 'Final namespace probe output:'
+    $lastProbe | ForEach-Object { Write-Host ([string]$_) }
     throw 'Temporal frontend failed readiness.'
 }
 function Set-FrontendAddress {
@@ -126,6 +150,11 @@ try {
         }
     }
     Write-Host "PASS: selected Temporal Phase 3 stage $Stage (not complete Phase 3 acceptance)."
+} catch {
+    if (Test-Path $envFile) {
+        try { Show-FixtureDiagnostics } catch { Write-Warning 'Unable to collect fixture diagnostics.' }
+    }
+    throw
 } finally {
     [Environment]::SetEnvironmentVariable('TEMPORAL_ADDRESS',$oldAddress,'Process')
     if (Test-Path $envFile) {
