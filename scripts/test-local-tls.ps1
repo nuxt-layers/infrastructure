@@ -1,3 +1,5 @@
+[CmdletBinding()]
+param([string]$TraefikImage)
 $ErrorActionPreference = 'Stop'
 $folder = Join-Path ([IO.Path]::GetTempPath()) ('nl-local-tls-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $folder | Out-Null
@@ -37,6 +39,7 @@ try {
     }
     & node (Join-Path $PSScriptRoot '../tests/site-hosting/acceptance.mjs') $folder
     if ($LASTEXITCODE -ne 0) { throw 'Local TLS fixture failed.' }
+    if ($TraefikImage) { & (Join-Path $PSScriptRoot 'invoke-proxy-fixture.ps1') -TraefikImage $TraefikImage -CertificateFolder $folder }
 } finally {
     foreach ($item in $keys) { $item.Dispose() }
     Remove-Item -LiteralPath $folder -Recurse -Force
