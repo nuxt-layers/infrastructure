@@ -1,0 +1,7 @@
+# Apply only after successful offline restore, on same disposable project.
+services:
+  postgres-temporal:
+    command: ["postgres","-c","archive_mode=off","-c","restore_command=pgbackrest --stanza=fixture archive-get %f %p"]
+    volumes:
+      - temporal_restored:/var/lib/postgresql/18/docker
+      - temporal_backup:/backup:ro

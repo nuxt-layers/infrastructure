@@ -1,0 +1,34 @@
+# Overlay on hardened disposable fixture only.
+services:
+  postgres-temporal:
+    image: ${TEMPORAL_RECOVERY_IMAGE:?Required locally built recovery image}
+    environment:
+      PGBACKREST_PG1_USER: temporal_bootstrap
+      PGBACKREST_REPO1_CIPHER_PASS: ${RECOVERY_REPO_SECRET:?Required}
+    command: ["postgres","-c","archive_mode=on","-c","archive_command=pgbackrest --stanza=fixture archive-push %p","-c","archive_timeout=10s"]
+    volumes:
+      - temporal_backup:/backup
+  prepare-recovery:
+    image: ${TEMPORAL_RECOVERY_IMAGE:?Required}
+    user: "0:0"
+    entrypoint: ["/bin/sh","-ec"]
+    command: ["chown postgres:postgres /backup /restore; chmod 700 /backup /restore"]
+    volumes:
+      - temporal_backup:/backup
+      - temporal_restored:/restore
+    network_mode: none
+    profiles: [recovery]
+  restore-temporal:
+    image: ${TEMPORAL_RECOVERY_IMAGE:?Required}
+    user: postgres
+    entrypoint: ["pgbackrest"]
+    environment:
+      PGBACKREST_REPO1_CIPHER_PASS: ${RECOVERY_REPO_SECRET:?Required}
+    volumes:
+      - temporal_backup:/backup:ro
+      - temporal_restored:/var/lib/postgresql/18/docker
+    network_mode: none
+    profiles: [recovery]
+volumes:
+  temporal_backup: {}
+  temporal_restored: {}
